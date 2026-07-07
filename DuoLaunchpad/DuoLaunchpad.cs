@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using Neo;
 using System.ComponentModel;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
@@ -22,7 +21,7 @@ namespace DuoLaunchpad
         private const string DECIMALS_KEY = "Decimals";
         private const string SYMBOL_KEY = "Symbol";
 
-        private static Transaction Tx => (Transaction)Runtime.ScriptContainer;
+        private static Transaction Tx => Runtime.Transaction;
 
         #endregion
 
@@ -74,10 +73,10 @@ namespace DuoLaunchpad
         /// </summary>
         /// <returns></returns>
         [Safe]
-        public override byte Decimals() => (byte)(BigInteger)ContractMetadata.Get(DECIMALS_KEY);
+        public override byte Decimals => (byte)(BigInteger)ContractMetadata.Get(DECIMALS_KEY);
 
         [Safe]
-        public override string Symbol() => (string)ContractMetadata.Get(SYMBOL_KEY);
+        public override string Symbol => (string)ContractMetadata.Get(SYMBOL_KEY);
 
         #endregion
 

@@ -47,7 +47,7 @@ public static class TestUtils
         return (nef, manifest);
     }
 
-    public static UInt160 DeployContract(TestEngine engine, NefFile nef, ContractManifest manifest, object? data = null)
+    public static UInt160 DeployContract(TestEngine engine, NefFile nef, ContractManifest manifest, object data = null)
     {
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
