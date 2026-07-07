@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Neo" Version="3.9.1" />
+    <PackageReference Include="Neo.SmartContract.Testing" Version="3.9.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\DuoSwapFactory\bin\sc\DuoSwapFactory.nef" Link="Contracts\DuoSwapFactory.nef" />
+    <EmbeddedResource Include="..\DuoSwapFactory\bin\sc\DuoSwapFactory.manifest.json" Link="Contracts\DuoSwapFactory.manifest.json" />
+    <EmbeddedResource Include="..\DuoSwapRouter\bin\sc\DuoSwapRouter.nef" Link="Contracts\DuoSwapRouter.nef" />
+    <EmbeddedResource Include="..\DuoSwapRouter\bin\sc\DuoSwapRouter.manifest.json" Link="Contracts\DuoSwapRouter.manifest.json" />
+    <EmbeddedResource Include="..\DuoBondingCurve\bin\sc\DuoBondingCurve.nef" Link="Contracts\DuoBondingCurve.nef" />
+    <EmbeddedResource Include="..\DuoBondingCurve\bin\sc\DuoBondingCurve.manifest.json" Link="Contracts\DuoBondingCurve.manifest.json" />
+  </ItemGroup>
+</Project>

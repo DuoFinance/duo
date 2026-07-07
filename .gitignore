@@ -1,0 +1,73 @@
+# env
+.env
+.env.*
+!.env.example
+
+# ----------------------
+# C# / .NET
+# ----------------------
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+.dotnet
+
+# user-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / VS
+.vs/
+.idea/
+.vscode/
+
+# NuGet
+packages/
+*.nupkg
+.nuget.props
+.nuget.targets
+
+# test results
+TestResults/
+
+# ----------------------
+# NEO / contract artifacts
+# ----------------------
+artifacts/
+contracts.artifacts/
+*.nef
+*.manifest.json
+debug.json
+
+# deployment / local outputs
+deployments/
+wallets/
+storage/
+
+# ----------------------
+# OS files
+# ----------------------
+.DS_Store
+Thumbs.db
+
+# ----------------------
+# temp files
+# ----------------------
+tmp/
+temp/
+*.tmp
+*.swp
+
+# NuGet packages
+packages/
+*.nupkg
+
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
