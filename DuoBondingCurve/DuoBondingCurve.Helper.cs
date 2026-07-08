@@ -1,6 +1,5 @@
 using System.Numerics;
 using System.ComponentModel;
-using Neo;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Services;
@@ -10,9 +9,10 @@ namespace DuoBondingCurve
 {
     public partial class DuoBondingCurve : SmartContract
     {
-        private const string OWNER_KEY = "Owner";
+        
         private const string FACTORY_KEY = "Factory";
         private const string ROUTER_KEY = "Router";
+        private const string DEPLOYFEE_KEY = "DeployFee";
         private const byte SALE_ACTIVE = 0;
         private const byte SALE_COMPLETED = 1;
         private const byte SALE_FINALIZED = 2;
@@ -47,7 +47,7 @@ namespace DuoBondingCurve
 
         public static void _deploy(object data, bool update)
         {
-            if (update) return;
+            Assert(!update, "Not Upgradable");
 
             Assert(data != null, "INVALID_DATA");
             object[] args = (object[])data;
@@ -57,21 +57,18 @@ namespace DuoBondingCurve
             Assert(factory.IsValid && !factory.IsZero, "INVALID_FACTORY");
             Assert(router.IsValid && !router.IsZero, "INVALID_ROUTER");
 
-            Storage.Put(Storage.CurrentContext, OWNER_KEY, Tx.Sender);
             Storage.Put(Storage.CurrentContext, FACTORY_KEY, factory);
             Storage.Put(Storage.CurrentContext, ROUTER_KEY, router);
+
+            var pair_deployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
+            Storage.Put(Storage.CurrentContext, DEPLOYFEE_KEY, pair_deployFee);
         }
 
         #endregion
 
         #region Getters
 
-        [Safe]
-        public static UInt160 GetOwner()
-        {
-            return Storage.Get(Storage.CurrentContext, OWNER_KEY).Length == 20 ? (UInt160)Storage.Get(Storage.CurrentContext, OWNER_KEY) : UInt160.Zero;
-        }
-
+    
         [Safe]
         public static UInt160 GetFactory()
         {
@@ -126,9 +123,7 @@ namespace DuoBondingCurve
         {
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
-            // FIX: mirrors ProcessSell — selling (and therefore quoting a sell) is
-            // also allowed while SALE_COMPLETED, since that's the safety-valve exit
-            // path if finalization is ever stuck.
+         
             Assert(SaleExists(sale) && (sale.State == SALE_ACTIVE || sale.State == SALE_COMPLETED), "SALE_NOT_SELLABLE");
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
             return GetSellAmount(sale, tokenAmount);
@@ -136,17 +131,6 @@ namespace DuoBondingCurve
 
         #endregion
 
-        #region Admin
-
-        public static void Update(ByteString nefFile, string manifest)
-        {
-            Assert(Runtime.CheckWitness(GetOwner()), "FORBIDDEN");
-            ContractManagement.Update(nefFile, manifest);
-        }
-
-        public static bool Verify() => Runtime.CheckWitness(GetOwner());
-
-        #endregion
 
         #region Curve Math
 
@@ -226,21 +210,8 @@ namespace DuoBondingCurve
             }
         }
 
-        internal static BigInteger Sqrt(BigInteger value)
-        {
-            if (value <= 0) return 0;
-            return value.Sqrt();
-        }
 
-        // FIX: `name` is fully attacker-controlled (any caller of CreateSale) and
-        // was previously spliced into this JSON string with no escaping at all.
-        // A name containing a `"` could terminate the "name" field early and
-        // inject arbitrary additional manifest fields (extra "permissions",
-        // "trusts", "groups", etc.) into the deployed token contract. Every
-        // character that JSON requires to be escaped is now escaped before
-        // interpolation, and any other control character is stripped, so the
-        // value can only ever populate the "name" string field and nothing else.
-        internal static string EscapeJsonString(string value)
+             internal static string EscapeJsonString(string value)
         {
             string result = "";
             for (int i = 0; i < value.Length; i++)

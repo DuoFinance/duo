@@ -10,7 +10,7 @@ namespace DuoBondingCurve
     [ManifestExtra("Description", "DuoBondingCurve - Fair Launch via Bonding Curve (pump.fun style)")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
     [ContractPermission("0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0", new[] { "deserialize", "serialize" })]
-    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "deploy", "getContract", "update" })]
+    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "deploy", "getContract"})]
     [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity" })]
     public partial class DuoBondingCurve : SmartContract
     {
@@ -32,8 +32,8 @@ namespace DuoBondingCurve
             Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
             Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
 
-            BigInteger deployFeeAtCreation = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
-            Assert(targetRaise > deployFeeAtCreation * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
+            BigInteger pair_DeployFee = (BigInteger)Storage.Get(DEPLOYFEE_KEY);
+            Assert(targetRaise > pair_DeployFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
             byte[] nef = GetLaunchpadNef();
             string manifest = BuildImmutableTokenManifest(name);
@@ -122,7 +122,7 @@ namespace DuoBondingCurve
             BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
             BigInteger remainingToGrad = maxTokens - sale.TokensSold;
             BigInteger actualGas = gasAmount;
-            if (tokens > remainingToGrad)
+            if (tokens >= remainingToGrad)
             {
                 tokens = remainingToGrad;
                 actualGas = GetAmountIn(sale, tokens);
@@ -212,8 +212,7 @@ namespace DuoBondingCurve
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
 
-            BigInteger deployFee = (BigInteger)Contract.Call(
-                factory, "getDeployFee", CallFlags.ReadOnly);
+            BigInteger deployFee = (BigInteger)Storage.Get(DEPLOYFEE_KEY);
 
             BigInteger raisedGAS = sale.GASRaised;
             BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
