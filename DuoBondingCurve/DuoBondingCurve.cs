@@ -25,9 +25,6 @@ namespace DuoBondingCurve
             Assert(decimals >= 0 && decimals <= 18, "INVALID_DECIMALS");
             Assert(totalSupply > 0, "INVALID_SUPPLY");
             Assert(targetRaise > 0, "INVALID_TARGET");
-            // FIX: graduationBps == 5000 makes (2*P - 10000) == 0, which the virtual
-            // reserve formula below divides by. Excluding the boundary avoids a
-            // divide-by-zero and matches the range that is actually usable.
             Assert(graduationBps > 5000 && graduationBps <= 8000, "INVALID_GRADUATION_BPS");
 
             UInt160 factory = GetFactory();
@@ -35,11 +32,6 @@ namespace DuoBondingCurve
             Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
             Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
 
-            // FIX: require the raise to comfortably exceed the *current* deploy fee.
-            // This doesn't eliminate the risk of the factory's fee changing between
-            // creation and finalization, but it removes the common case where a sale
-            // is created with a target that is already too close to the fee to survive
-            // any fee movement at all.
             BigInteger deployFeeAtCreation = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
             Assert(targetRaise > deployFeeAtCreation * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
@@ -99,10 +91,6 @@ namespace DuoBondingCurve
                 if (data == null || data.Length == 0) return;
 
                 UInt160 tokenHash = (UInt160)data[0];
-                // FIX: buyers can now specify a minimum acceptable tokens-out to
-                // protect themselves against sandwich/front-run price movement.
-                // data = [tokenHash] or [tokenHash, minTokensOut]. Omitting
-                // minTokensOut is equivalent to accepting any amount (0).
                 BigInteger minTokensOut = 0;
                 if (data.Length >= 2 && data[1] != null)
                     minTokensOut = (BigInteger)data[1];
@@ -111,8 +99,6 @@ namespace DuoBondingCurve
             }
             else
             {
-                // FIX: sellers can now specify a minimum acceptable GAS-out.
-                // data = [] / null (no protection) or [minGasOut].
                 BigInteger minGasOut = 0;
                 if (data != null && data.Length >= 1 && data[0] != null)
                     minGasOut = (BigInteger)data[0];
@@ -152,7 +138,6 @@ namespace DuoBondingCurve
                 }
             }
 
-            // FIX: enforce the buyer's slippage bound on the *final* (possibly
             // capped) token amount they will actually receive.
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
@@ -168,18 +153,6 @@ namespace DuoBondingCurve
 
             if (sale.GASRaised >= sale.TargetRaise)
             {
-                // FIX: previously this called FinalizeSale() synchronously, which
-                // performs external calls to the factory/router (pair deploy,
-                // addLiquidity). If any of those calls failed, the whole buy
-                // transaction — including this state update — was rolled back by
-                // the VM's ABORT semantics, so the sale could never transition to
-                // SALE_COMPLETED and was stuck ACTIVE forever with no way to
-                // retry finalization independently of a buyer's transaction.
-                //
-                // Finalization is now decoupled: we only flip the state here.
-                // Anyone can call the public Finalize() below afterwards, and it
-                // can be retried indefinitely (e.g. once pool conditions or the
-                // factory fee normalize) without ever risking a buyer's purchase.
                 sale.State = SALE_COMPLETED;
             }
 
@@ -198,19 +171,14 @@ namespace DuoBondingCurve
             Enter();
 
             SaleInfo sale = GetSale(tokenHash);
-            // FIX: allow selling back into the curve while a sale is SALE_COMPLETED
-            // (raised its target but not yet finalized into an AMM pool) in
-            // addition to SALE_ACTIVE. This gives buyers/holders an exit if
-            // finalization is ever stuck (e.g. pool ratio manipulation, or a
-            // temporary factory-fee spike — see FinalizeSale), instead of their
-            // GAS being frozen in the contract with no redemption path.
+
             Assert(SaleExists(sale) && (sale.State == SALE_ACTIVE || sale.State == SALE_COMPLETED), "SALE_NOT_SELLABLE");
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
 
             BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
             Assert(gasReturn > 0, "ZERO_GAS");
             Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
-            // FIX: seller slippage protection.
+  
             Assert(gasReturn >= minGasOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold -= tokenAmount;
@@ -237,15 +205,6 @@ namespace DuoBondingCurve
         #endregion
 
         #region Finalize
-
-        // FIX: addLiquidity now uses a real slippage tolerance instead of
-        // min == desired. Previously, if the tokenHash/GAS pair already existed
-        // with a skewed ratio (e.g. an attacker pre-created the pair via the
-        // factory and donated a small, disproportionate amount of liquidity),
-        // addLiquidity's actual amounts would almost never exactly match the
-        // desired amounts and this call would revert every single time,
-        // permanently blocking finalization. A tolerance lets the router add
-        // liquidity at the best available ratio within an acceptable band.
         private const int LIQUIDITY_SLIPPAGE_BPS = 200; // 2%
 
         private static void FinalizeSale(UInt160 tokenHash, SaleInfo sale)
@@ -279,12 +238,6 @@ namespace DuoBondingCurve
             BigInteger minTokens = remainingTokens * (10000 - LIQUIDITY_SLIPPAGE_BPS) / 10000;
             BigInteger minGas = gasForLiquidity * (10000 - LIQUIDITY_SLIPPAGE_BPS) / 10000;
 
-            // FIX: scope what the router is allowed to pull via ApprovedTransfer
-            // to exactly this finalize operation's token, recipient, and amount,
-            // instead of ApprovedTransfer trusting the router unconditionally for
-            // any token/amount while any lock is held (which previously let a
-            // buggy or compromised router drain unrelated sales' escrowed
-            // balances during any buy/sell/finalize on the whole contract).
             SetPendingApproval(tokenHash, pair, remainingTokens);
             SetPendingApproval(GAS.Hash, pair, gasForLiquidity);
 
@@ -340,13 +293,6 @@ namespace DuoBondingCurve
 
         #region ApprovedTransfer (for Router)
 
-        // FIX: previously this let the router pull ANY amount of ANY token this
-        // contract held, as long as a reentrancy lock happened to be active
-        // (true during any buy/sell/finalize on any sale) — i.e. the router was
-        // fully, unconditionally trusted with the contract's entire balance.
-        // It's now scoped to a specific (token, recipient, remaining amount)
-        // that FinalizeSale explicitly pre-authorizes immediately before calling
-        // addLiquidity, and every pull decrements that specific allowance.
         public static bool ApprovedTransfer(UInt160 token, UInt160 to, BigInteger amount, object data)
         {
             UInt160 router = GetRouter();
