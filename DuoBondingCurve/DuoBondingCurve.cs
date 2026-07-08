@@ -88,7 +88,8 @@ namespace DuoBondingCurve
 
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
-            Assert(from.IsValid && !from.IsZero, "INVALID_SENDER");
+            // Mint operations (PostTransfer from null) are a no-op for us
+            if (!from.IsValid || from.IsZero) return;
             Assert(amount > 0, "INVALID_AMOUNT");
 
             UInt160 caller = Runtime.CallingScriptHash;
