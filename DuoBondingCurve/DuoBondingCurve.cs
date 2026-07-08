@@ -10,7 +10,7 @@ namespace DuoBondingCurve
     [ManifestExtra("Description", "DuoBondingCurve - Fair Launch via Bonding Curve (pump.fun style)")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
     [ContractPermission("0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0", new[] { "deserialize", "serialize" })]
-    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "deploy", "getContract"})]
+    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "deploy", "getContract" })]
     [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity" })]
     public partial class DuoBondingCurve : SmartContract
     {
@@ -18,6 +18,7 @@ namespace DuoBondingCurve
 
         public static void CreateSale(string name, string symbol, BigInteger totalSupplyWithDecimals, BigInteger targetRaise, BigInteger graduationBps)
         {
+            Enter();
             Assert(name.Length > 0 && name.Length <= 64, "INVALID_NAME");
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
             BigInteger totalSupply = totalSupplyWithDecimals >> 8;
@@ -31,9 +32,11 @@ namespace DuoBondingCurve
             UInt160 router = GetRouter();
             Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
             Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
+            var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
+            Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
-            BigInteger pair_DeployFee = (BigInteger)Storage.Get(DEPLOYFEE_KEY);
-            Assert(targetRaise > pair_DeployFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
+            BigInteger twoPminusOne = 2 * graduationBps - 10000;
+            Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
             string manifest = BuildImmutableTokenManifest(name);
@@ -46,11 +49,13 @@ namespace DuoBondingCurve
             string tokenSymbol = (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly);
             BigInteger tokenTotalSupply = (BigInteger)Contract.Call(tokenHash, "totalSupply", CallFlags.ReadOnly);
 
+            Assert(tokenSymbol == symbol, "SYMBOL_MISMATCH");
+            Assert(tokenTotalSupply == totalSupply, "SUPPLY_MISMATCH");
+            
             // Compute virtual reserves for price continuity at graduation:
             // vToken = T * P² / 10000 / (2P - 10000)
             // vGas   = R * (10000 - P) / (2P - 10000)
-            BigInteger twoPminusOne = 2 * graduationBps - 10000;
-            Assert(twoPminusOne > 0, "INVALID_GRADUATION");
+
             BigInteger pSquared = graduationBps * graduationBps;
             BigInteger vToken = tokenTotalSupply * pSquared / 10000 / twoPminusOne;
             BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
@@ -69,9 +74,10 @@ namespace DuoBondingCurve
                 GraduationBps = graduationBps,
                 State = SALE_ACTIVE
             };
-
             StoreSale(tokenHash, info);
             OnSaleCreated(Tx.Sender, tokenHash, tokenSymbol, tokenTotalSupply, targetRaise, graduationBps);
+
+            Exit();
         }
 
         #endregion
@@ -178,7 +184,7 @@ namespace DuoBondingCurve
             BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
             Assert(gasReturn > 0, "ZERO_GAS");
             Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
-  
+
             Assert(gasReturn >= minGasOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold -= tokenAmount;
@@ -212,18 +218,19 @@ namespace DuoBondingCurve
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
 
-            BigInteger deployFee = (BigInteger)Storage.Get(DEPLOYFEE_KEY);
+            var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
+            var pair_DeployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
 
             BigInteger raisedGAS = sale.GASRaised;
             BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
             Assert(remainingTokens > 0, "NO_TOKENS_FOR_LP");
-            Assert(raisedGAS > deployFee, "INSUFFICIENT_FOR_DEPLOY");
+            Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
 
-            BigInteger gasForLiquidity = raisedGAS - deployFee;
+            BigInteger gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
 
             bool deployed = (bool)Contract.Call(
                 GAS.Hash, "transfer", CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, factory, deployFee,
+                new object[] { Runtime.ExecutingScriptHash, factory, pair_DeployFee,
                     new object[] { tokenHash, GAS.Hash } });
             Assert(deployed, "PAIR_DEPLOY_FAILED");
 
@@ -253,8 +260,7 @@ namespace DuoBondingCurve
                     deadline
                 });
 
-            // Clear any unused approval so it can't be pulled by a later,
-            // unrelated call while a lock happens to be held.
+
             ClearPendingApproval(tokenHash, pair);
             ClearPendingApproval(GAS.Hash, pair);
 

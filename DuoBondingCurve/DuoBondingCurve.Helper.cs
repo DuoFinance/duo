@@ -12,7 +12,6 @@ namespace DuoBondingCurve
         
         private const string FACTORY_KEY = "Factory";
         private const string ROUTER_KEY = "Router";
-        private const string DEPLOYFEE_KEY = "DeployFee";
         private const byte SALE_ACTIVE = 0;
         private const byte SALE_COMPLETED = 1;
         private const byte SALE_FINALIZED = 2;
@@ -60,8 +59,6 @@ namespace DuoBondingCurve
             Storage.Put(Storage.CurrentContext, FACTORY_KEY, factory);
             Storage.Put(Storage.CurrentContext, ROUTER_KEY, router);
 
-            var pair_deployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
-            Storage.Put(Storage.CurrentContext, DEPLOYFEE_KEY, pair_deployFee);
         }
 
         #endregion
