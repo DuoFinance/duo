@@ -201,7 +201,7 @@ namespace DuoBondingCurve
             if (!condition)
             {
                 onFault(message, null);
-                ExecutionEngine.Abort(message);
+                ExecutionEngine.Assert(false);
             }
         }
 

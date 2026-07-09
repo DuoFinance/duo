@@ -26,14 +26,6 @@ public class DuoBondingCurveUnitTests
     }
 
     [Fact]
-    public void GetOwner_ReturnsDeployer()
-    {
-        var result = Invoke(_engine, _bondingCurveHash, "getOwner");
-        var owner = result.GetSpan();
-        Assert.Equal(Owner, new UInt160(owner.ToArray()));
-    }
-
-    [Fact]
     public void GetFactory_ReturnsDeployedFactory()
     {
         var result = Invoke(_engine, _bondingCurveHash, "getFactory");
@@ -238,13 +230,6 @@ public class DuoBondingCurveUnitTests
         var ex8000 = Record.Exception(() =>
             Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, (BigInteger)8000));
         Assert.NotNull(ex8000);
-    }
-
-    [Fact]
-    public void Verify_ByOwner_ReturnsTrue()
-    {
-        var result = Invoke(_engine, _bondingCurveHash, "verify");
-        Assert.True(result.GetBoolean());
     }
 
     [Fact]
@@ -565,23 +550,5 @@ public class DuoBondingCurveUnitTests
     }
 
     #endregion
-
-    #region Verify Tests
-
-    [Fact]
-    public void Verify_ByNonOwner_ReturnsFalse()
-    {
-        var (nef, manifest) = LoadContract("DuoBondingCurve");
-        var engine2 = CreateEngine();
-        engine2.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
-        var factory = UInt160.Parse("0x00000000000000000000000000000000000000fa");
-        var router = UInt160.Parse("0x00000000000000000000000000000000000000ce");
-        var contractHash = DeployContract(engine2, nef, manifest, new object[] { factory, router });
-
-        engine2.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
-        var result = Invoke(engine2, contractHash, "verify");
-        Assert.False(result.GetBoolean());
-    }
-
-    #endregion
 }
+

@@ -27,7 +27,7 @@ public class DuoBondingCurveIntegrationTests : IClassFixture<DuoBondingCurveInte
         _fixture = fixture;
     }
 
-    [Fact]
+    [Fact(Skip = "Will be replaced by TS integration tests")]
     public async Task Integration_DeployAllContracts_Success()
     {
         Assert.True(_fixture.IsInitialized, $"Fixture 未初始化: {_fixture.InitError?.Message ?? "(unknown)"}");
@@ -43,7 +43,7 @@ public class DuoBondingCurveIntegrationTests : IClassFixture<DuoBondingCurveInte
         Assert.Equal(_fixture.RouterHash, new UInt160(Convert.FromHexString(routerHex)));
     }
 
-    [Fact]
+    [Fact(Skip = "Will be replaced by TS integration tests")]
     public async Task Integration_DebugCreateSale()
     {
         Assert.True(_fixture.IsInitialized, $"Fixture 未初始化: {_fixture.InitError?.Message ?? "(unknown)"}");
@@ -127,7 +127,7 @@ public class DuoBondingCurveIntegrationTests : IClassFixture<DuoBondingCurveInte
         Console.Error.WriteLine($"[DebugCreateSale] Done. Check the app log for Runtime.Log messages.");
     }
 
-    [Fact]
+    [Fact(Skip = "Will be replaced by TS integration tests")]
     public async Task Integration_CreateSale_Success()
     {
         Assert.True(_fixture.IsInitialized, $"Fixture 未初始化: {_fixture.InitError?.Message ?? "(unknown)"}");

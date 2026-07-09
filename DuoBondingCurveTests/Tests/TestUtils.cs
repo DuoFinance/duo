@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Reflection;
 using Neo;
 using Neo.Extensions;
@@ -22,6 +23,10 @@ public static class TestUtils
         lock (EngineLock)
         {
             var engine = new TestEngine();
+            // Fund Owner with GAS from validators
+            var gas = engine.Native.GAS.Hash;
+            engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, new[] { engine.ValidatorsAddress });
+            Invoke(engine, gas, "transfer", engine.ValidatorsAddress, Owner, (BigInteger)1_000_000_000_000_000, null);
             engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, Owner);
             return engine;
         }

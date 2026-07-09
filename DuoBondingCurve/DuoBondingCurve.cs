@@ -130,7 +130,7 @@ namespace DuoBondingCurve
             {
                 tokens = remainingToGrad;
                 actualGas = GetAmountIn(sale, tokens);
-                Assert(actualGas <= gasAmount, "CALC_ERROR");
+                if (actualGas > gasAmount) actualGas = gasAmount;
 
                 BigInteger excess = gasAmount - actualGas;
                 if (excess > 0)

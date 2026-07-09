@@ -20,5 +20,7 @@
     <EmbeddedResource Include="..\DuoSwapRouter\bin\sc\DuoSwapRouter.manifest.json" Link="Contracts\DuoSwapRouter.manifest.json" />
     <EmbeddedResource Include="..\DuoBondingCurve\bin\sc\DuoBondingCurve.nef" Link="Contracts\DuoBondingCurve.nef" />
     <EmbeddedResource Include="..\DuoBondingCurve\bin\sc\DuoBondingCurve.manifest.json" Link="Contracts\DuoBondingCurve.manifest.json" />
+    <EmbeddedResource Include="..\DuoLaunchpad\bin\sc\DuoLaunchpad.nef" Link="Contracts\DuoLaunchpad.nef" />
+    <EmbeddedResource Include="..\DuoLaunchpad\bin\sc\DuoLaunchpad.manifest.json" Link="Contracts\DuoLaunchpad.manifest.json" />
   </ItemGroup>
 </Project>
