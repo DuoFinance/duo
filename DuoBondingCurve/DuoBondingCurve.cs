@@ -1,5 +1,4 @@
 using System.Numerics;
-using Neo;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
@@ -7,10 +6,8 @@ using Neo.SmartContract.Framework.Attributes;
 
 namespace DuoBondingCurve
 {
-    [ManifestExtra("Description", "DuoBondingCurve - Fair Launch via Bonding Curve (pump.fun style)")]
+    [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0", new[] { "deserialize", "serialize" })]
-    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "deploy", "getContract" })]
     [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity" })]
     public partial class DuoBondingCurve : SmartContract
     {
@@ -26,12 +23,13 @@ namespace DuoBondingCurve
             Assert(decimals >= 0 && decimals <= 18, "INVALID_DECIMALS");
             Assert(totalSupply > 0, "INVALID_SUPPLY");
             Assert(targetRaise > 0, "INVALID_TARGET");
-            Assert(graduationBps > 5000 && graduationBps <= 8000, "INVALID_GRADUATION_BPS");
+            Assert(graduationBps > 5000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
 
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
             Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
             Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
+
             var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
             Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
@@ -72,7 +70,7 @@ namespace DuoBondingCurve
                 VirtualGas = vGas,
                 VirtualToken = vToken,
                 GraduationBps = graduationBps,
-                State = SALE_ACTIVE
+                Graduated = false
             };
             StoreSale(tokenHash, info);
             OnSaleCreated(Tx.Sender, tokenHash, tokenSymbol, tokenTotalSupply, targetRaise, graduationBps);
@@ -118,7 +116,7 @@ namespace DuoBondingCurve
             Enter();
 
             SaleInfo sale = GetSale(tokenHash);
-            Assert(SaleExists(sale) && sale.State == SALE_ACTIVE, "SALE_NOT_ACTIVE");
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
             // Compute tokens from the CP-AMM curve using virtual reserves
             BigInteger tokens = GetAmountOut(sale, gasAmount);
@@ -137,14 +135,12 @@ namespace DuoBondingCurve
                 BigInteger excess = gasAmount - actualGas;
                 if (excess > 0)
                 {
-                    bool refundOk = (bool)Contract.Call(
-                        GAS.Hash, "transfer", CallFlags.All,
-                        new object[] { Runtime.ExecutingScriptHash, buyer, excess, null });
+                    bool refundOk = GAS.Transfer(Runtime.ExecutingScriptHash, buyer, excess, null);
                     Assert(refundOk, "REFUND_FAILED");
                 }
             }
 
-            // capped) token amount they will actually receive.
+            // capped token amount they will actually receive.
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
             bool ok = (bool)Contract.Call(
@@ -159,10 +155,13 @@ namespace DuoBondingCurve
 
             if (sale.GASRaised >= sale.TargetRaise)
             {
-                sale.State = SALE_COMPLETED;
+                FinalizeSale(tokenHash, sale);
+            }
+            else
+            {
+                StoreSale(tokenHash, sale);
             }
 
-            StoreSale(tokenHash, sale);
             OnTokensPurchased(buyer, tokenHash, tokens, actualGas, sale.TokensSold, sale.GASRaised);
 
             Exit();
@@ -178,7 +177,7 @@ namespace DuoBondingCurve
 
             SaleInfo sale = GetSale(tokenHash);
 
-            Assert(SaleExists(sale) && (sale.State == SALE_ACTIVE || sale.State == SALE_COMPLETED), "SALE_NOT_SELLABLE");
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
 
             BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
@@ -190,16 +189,7 @@ namespace DuoBondingCurve
             sale.TokensSold -= tokenAmount;
             sale.GASRaised -= gasReturn;
 
-            // If a completed-but-not-yet-finalized sale drops back below target
-            // via a sell, it should be sellable/buyable as an active sale again.
-            if (sale.State == SALE_COMPLETED && sale.GASRaised < sale.TargetRaise)
-            {
-                sale.State = SALE_ACTIVE;
-            }
-
-            bool ok = (bool)Contract.Call(
-                GAS.Hash, "transfer", CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, seller, gasReturn, null });
+            bool ok = GAS.Transfer(Runtime.ExecutingScriptHash, seller, gasReturn, null);
             Assert(ok, "GAS_TRANSFER_FAILED");
 
             StoreSale(tokenHash, sale);
@@ -228,10 +218,8 @@ namespace DuoBondingCurve
 
             BigInteger gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
 
-            bool deployed = (bool)Contract.Call(
-                GAS.Hash, "transfer", CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, factory, pair_DeployFee,
-                    new object[] { tokenHash, GAS.Hash } });
+            bool deployed = GAS.Transfer(Runtime.ExecutingScriptHash, factory, pair_DeployFee,
+                new object[] { tokenHash, GAS.Hash });
             Assert(deployed, "PAIR_DEPLOY_FAILED");
 
             UInt160 pair = (UInt160)Contract.Call(
@@ -275,23 +263,10 @@ namespace DuoBondingCurve
                 Assert(burnOk, "LP_BURN_FAILED");
             }
 
-            sale.State = SALE_FINALIZED;
+            sale.Graduated = true;
             StoreSale(tokenHash, sale);
 
             OnSaleCompleted(tokenHash, sale.Symbol, pair, liquidity, remainingTokens, gasForLiquidity);
-        }
-
-        public static bool Finalize(UInt160 tokenHash)
-        {
-            Enter();
-
-            SaleInfo sale = GetSale(tokenHash);
-            Assert(sale.State == SALE_COMPLETED, "SALE_NOT_COMPLETED");
-
-            FinalizeSale(tokenHash, sale);
-
-            Exit();
-            return true;
         }
 
         #endregion

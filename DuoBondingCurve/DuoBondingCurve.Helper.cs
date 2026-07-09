@@ -9,12 +9,10 @@ namespace DuoBondingCurve
 {
     public partial class DuoBondingCurve : SmartContract
     {
-        
+
         private const string FACTORY_KEY = "Factory";
         private const string ROUTER_KEY = "Router";
-        private const byte SALE_ACTIVE = 0;
-        private const byte SALE_COMPLETED = 1;
-        private const byte SALE_FINALIZED = 2;
+
 
         private static Transaction Tx => (Transaction)Runtime.Transaction;
 
@@ -65,7 +63,7 @@ namespace DuoBondingCurve
 
         #region Getters
 
-    
+
         [Safe]
         public static UInt160 GetFactory()
         {
@@ -87,14 +85,14 @@ namespace DuoBondingCurve
         }
 
         [Safe]
-        public static BigInteger GetCurrentPrice(UInt160 tokenHash)
+        public static BigInteger[] GetVirtualReserves(UInt160 tokenHash)
         {
             var sale = GetSale(tokenHash);
-            Assert(SaleExists(sale) && sale.State == SALE_ACTIVE, "SALE_NOT_ACTIVE");
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             Assert(tokenReserve > 0, "NO_TOKENS_LEFT");
-            return gasReserve * 100_000_000 / tokenReserve;
+            return new BigInteger[] { gasReserve, tokenReserve };
         }
 
         [Safe]
@@ -102,7 +100,7 @@ namespace DuoBondingCurve
         {
             Assert(gasAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
-            Assert(SaleExists(sale) && sale.State == SALE_ACTIVE, "SALE_NOT_ACTIVE");
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             return GetAmountOut(sale, gasAmount);
         }
 
@@ -111,7 +109,7 @@ namespace DuoBondingCurve
         {
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
-            Assert(SaleExists(sale) && sale.State == SALE_ACTIVE, "SALE_NOT_ACTIVE");
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             return GetAmountIn(sale, tokenAmount);
         }
 
@@ -120,8 +118,8 @@ namespace DuoBondingCurve
         {
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
-         
-            Assert(SaleExists(sale) && (sale.State == SALE_ACTIVE || sale.State == SALE_COMPLETED), "SALE_NOT_SELLABLE");
+
+            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
             return GetSellAmount(sale, tokenAmount);
         }
@@ -208,7 +206,7 @@ namespace DuoBondingCurve
         }
 
 
-             internal static string EscapeJsonString(string value)
+        internal static string EscapeJsonString(string value)
         {
             string result = "";
             for (int i = 0; i < value.Length; i++)
@@ -228,13 +226,13 @@ namespace DuoBondingCurve
         internal static string BuildImmutableTokenManifest(string name)
         {
             string safeName = EscapeJsonString(name);
-            
+
             return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":835,\"safe\":false},{\"name\":\"initialise\",\"parameters\":[{\"name\":\"sender\",\"type\":\"Hash160\"},{\"name\":\"decimals\",\"type\":\"Integer\"},{\"name\":\"symbol\",\"type\":\"String\"},{\"name\":\"totalSupply\",\"type\":\"Any\"}],\"returntype\":\"Void\",\"offset\":997,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1199,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"0xfffdc93764dbaddd97c48f252a53ea4643faa3fd\",\"methods\":[\"getContract\"]},{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":{}}";
-             }
+        }
 
         internal static byte[] GetLaunchpadNef()
         {
-            return new byte[] 
+            return new byte[]
             {
             0x4e, 0x45, 0x46, 0x33, 0x4e, 0x65, 0x6f, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x69, 0x6c, 0x65, 0x72,
             0x2e, 0x43, 0x53, 0x68, 0x61, 0x72, 0x70, 0x20, 0x33, 0x2e, 0x39, 0x2e, 0x31, 0x2b, 0x35, 0x66,
@@ -361,6 +359,6 @@ namespace DuoBondingCurve
         public BigInteger VirtualGas;
         public BigInteger VirtualToken;
         public BigInteger GraduationBps;
-        public byte State;
+        public bool Graduated;
     }
 }
