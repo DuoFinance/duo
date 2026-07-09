@@ -10,7 +10,6 @@ namespace DuoLaunchpad
     [ManifestExtra("Description", "DuoLaunchpad Series")]
     [SupportedStandards("NEP-17")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("0xfffdc93764dbaddd97c48f252a53ea4643faa3fd", new[] { "getContract"})]
     [ContractPermission("*", new[] { "onNEP17Payment" })]
 
     public class DuoLaunchpad : Nep17Token
