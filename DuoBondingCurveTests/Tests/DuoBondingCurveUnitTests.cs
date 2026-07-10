@@ -85,21 +85,21 @@ public class DuoBondingCurveUnitTests
         Assert.NotNull(exception);
     }
 
-    [Fact]
-    public void CreateSale_WithValidParams_FailsAtDeploy()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 8000;
+        [Fact]
+        public void CreateSale_WithValidParams_Succeeds()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 8000;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
     [Fact]
     public void CreateSale_InvalidName_Faults()
@@ -197,40 +197,40 @@ public class DuoBondingCurveUnitTests
         Assert.NotNull(exception);
     }
 
-    [Fact]
-    public void CreateSale_GraduationBpsTooHigh_Faults()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 8001;
+        [Fact]
+        public void CreateSale_GraduationBps9901_Faults()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 9901;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.NotNull(exception);
+        }
 
-    [Fact]
-    public void CreateSale_EdgeGraduationBps_Works()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
+        [Fact]
+        public void CreateSale_EdgeGraduationBps_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
 
-        var ex5000 = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, (BigInteger)5000));
-        Assert.NotNull(ex5000);
+            var ex5000 = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, (BigInteger)5000));
+            Assert.NotNull(ex5000);
 
-        var ex8000 = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, (BigInteger)8000));
-        Assert.NotNull(ex8000);
-    }
+            var ex8000 = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, (BigInteger)8000));
+            Assert.Null(ex8000);
+        }
 
     [Fact]
     public void Update_ByNonOwner_Faults()
@@ -244,21 +244,21 @@ public class DuoBondingCurveUnitTests
 
     #region CreateSale Boundary Validation
 
-    [Fact]
-    public void CreateSale_SymbolExactlyMaxLength_Works()
-    {
-        string name = "TestToken";
-        string symbol = "12345678";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 6500;
+        [Fact]
+        public void CreateSale_SymbolExactlyMaxLength_Works()
+        {
+            string name = "TestToken";
+            string symbol = "12345678";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 6500;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
     [Fact]
     public void CreateSale_SymbolTooLongByOne_Faults()
@@ -292,37 +292,37 @@ public class DuoBondingCurveUnitTests
         Assert.NotNull(exception);
     }
 
-    [Fact]
-    public void CreateSale_DecimalsZero_Works()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 0;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 6500;
+        [Fact]
+        public void CreateSale_DecimalsZero_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 0;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 6500;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
-    [Fact]
-    public void CreateSale_Decimals18_Works()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 18;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 6500;
+        [Fact]
+        public void CreateSale_Decimals18_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 18;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 6500;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
     [Fact]
     public void CreateSale_Decimals19_Faults()
@@ -372,53 +372,53 @@ public class DuoBondingCurveUnitTests
         Assert.NotNull(exception);
     }
 
-    [Fact]
-    public void CreateSale_GraduationBps8000_Works()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 8000;
+        [Fact]
+        public void CreateSale_GraduationBps8000_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 8000;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
-    [Fact]
-    public void CreateSale_GraduationBps8001_Faults()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1_000_000_000;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 8001;
+        [Fact]
+        public void CreateSale_GraduationBps8001_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1_000_000_000;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 8001;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
-    [Fact]
-    public void CreateSale_SupplyOne_Works()
-    {
-        string name = "TestToken";
-        string symbol = "TST";
-        byte decimals = 8;
-        BigInteger totalSupply = 1;
-        BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
-        BigInteger targetRaise = 10_000_000_000;
-        BigInteger graduationBps = 6500;
+        [Fact]
+        public void CreateSale_SupplyOne_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            byte decimals = 8;
+            BigInteger totalSupply = 1;
+            BigInteger totalSupplyWithDecimals = (totalSupply << 8) | decimals;
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 6500;
 
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
-        Assert.NotNull(exception);
-    }
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, totalSupplyWithDecimals, targetRaise, graduationBps));
+            Assert.Null(exception);
+        }
 
     [Fact]
     public void CreateSale_NegativeSupply_Faults()

@@ -44,26 +44,20 @@ namespace DuoBondingCurve
             Contract.Call(tokenHash, "initialise", CallFlags.All,
                 new object[] { Runtime.ExecutingScriptHash, (byte)decimals, symbol, totalSupply });
 
-            string tokenSymbol = (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly);
-            BigInteger tokenTotalSupply = (BigInteger)Contract.Call(tokenHash, "totalSupply", CallFlags.ReadOnly);
-
-            Assert(tokenSymbol == symbol, "SYMBOL_MISMATCH");
-            Assert(tokenTotalSupply == totalSupply, "SUPPLY_MISMATCH");
-            
             // Compute virtual reserves for price continuity at graduation:
             // vToken = T * P² / 10000 / (2P - 10000)
             // vGas   = R * (10000 - P) / (2P - 10000)
 
             BigInteger pSquared = graduationBps * graduationBps;
-            BigInteger vToken = tokenTotalSupply * pSquared / 10000 / twoPminusOne;
+            BigInteger vToken = totalSupply * pSquared / 10000 / twoPminusOne;
             BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
             SaleInfo info = new SaleInfo
             {
                 TokenHash = tokenHash,
                 Creator = Tx.Sender,
-                Symbol = tokenSymbol,
-                TotalSupply = tokenTotalSupply,
+                Symbol = symbol,
+                TotalSupply = totalSupply,
                 TokensSold = 0,
                 GASRaised = 0,
                 TargetRaise = targetRaise,
@@ -73,7 +67,7 @@ namespace DuoBondingCurve
                 Graduated = false
             };
             StoreSale(tokenHash, info);
-            OnSaleCreated(Tx.Sender, tokenHash, tokenSymbol, tokenTotalSupply, targetRaise, graduationBps);
+            OnSaleCreated(Tx.Sender, tokenHash, symbol, totalSupply, targetRaise, graduationBps);
 
             Exit();
         }
