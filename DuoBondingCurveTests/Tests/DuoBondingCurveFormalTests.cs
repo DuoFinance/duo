@@ -25,7 +25,7 @@ public class DuoBondingCurveFormalTests
     {
         BigInteger twoPminusOne = 2 * graduationBps - 10000;
         BigInteger pSquared = graduationBps * graduationBps;
-        BigInteger vToken = totalSupply * pSquared / 10000 / twoPminusOne;
+        BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
         BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
         return new SaleInfoModel

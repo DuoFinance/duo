@@ -44,7 +44,7 @@ public class DebugSupplyTest
         BigInteger graduationBps = 5001;
         BigInteger twoPminusOne = 2 * graduationBps - 10000;
         BigInteger pSquared = graduationBps * graduationBps;
-        BigInteger vToken = totalSupply * pSquared / 10000 / twoPminusOne;
+        BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
         BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
         // Build the serialized SaleInfo map (matching StdLib.Serialize format for struct)

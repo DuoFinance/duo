@@ -154,7 +154,7 @@ public class DuoBondingCurveIntegrationTests : IClassFixture<DuoBondingCurveInte
 
         BigInteger twoPminusOne = 2 * graduationBps - 10000;
         BigInteger pSquared = graduationBps * graduationBps;
-        BigInteger expectedVToken = totalSupply * pSquared / 10000 / twoPminusOne;
+        BigInteger expectedVToken = totalSupply * pSquared / (10000 * twoPminusOne);
         BigInteger expectedVGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
         Assert.Equal(expectedVToken, saleInfo.VirtualToken);
         Assert.Equal(expectedVGas, saleInfo.VirtualGas);

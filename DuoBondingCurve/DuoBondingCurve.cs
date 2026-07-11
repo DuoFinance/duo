@@ -8,7 +8,7 @@ namespace DuoBondingCurve
 {
     [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity" })]
+    [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity", "getReserves" })]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation
@@ -49,7 +49,7 @@ namespace DuoBondingCurve
             // vGas   = R * (10000 - P) / (2P - 10000)
 
             BigInteger pSquared = graduationBps * graduationBps;
-            BigInteger vToken = totalSupply * pSquared / 10000 / twoPminusOne;
+            BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
             BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
             SaleInfo info = new SaleInfo
@@ -147,7 +147,7 @@ namespace DuoBondingCurve
             sale.TokensSold += tokens;
             sale.GASRaised += actualGas;
 
-            if (sale.GASRaised >= sale.TargetRaise)
+            if (sale.GASRaised >= sale.TargetRaise || sale.TokensSold >= maxTokens)
             {
                 FinalizeSale(tokenHash, sale);
             }
@@ -208,18 +208,34 @@ namespace DuoBondingCurve
             BigInteger raisedGAS = sale.GASRaised;
             BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
             Assert(remainingTokens > 0, "NO_TOKENS_FOR_LP");
-            Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
-
-            BigInteger gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
-
-            bool deployed = GAS.Transfer(Runtime.ExecutingScriptHash, factory, pair_DeployFee,
-                new object[] { tokenHash, GAS.Hash });
-            Assert(deployed, "PAIR_DEPLOY_FAILED");
 
             UInt160 pair = (UInt160)Contract.Call(
                 factory, "getPairHash", CallFlags.ReadOnly,
                 new object[] { tokenHash, GAS.Hash });
-            Assert(pair.IsValid && !pair.IsZero, "PAIR_NOT_FOUND");
+
+            BigInteger gasForLiquidity;
+            if (pair.IsValid && !pair.IsZero)
+            {
+                gasForLiquidity = raisedGAS;
+            }
+            else
+            {
+                Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
+                gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
+
+                bool deployed = GAS.Transfer(Runtime.ExecutingScriptHash, factory, pair_DeployFee,
+                    new object[] { tokenHash, GAS.Hash });
+                Assert(deployed, "PAIR_DEPLOY_FAILED");
+
+                pair = (UInt160)Contract.Call(
+                    factory, "getPairHash", CallFlags.ReadOnly,
+                    new object[] { tokenHash, GAS.Hash });
+                Assert(pair.IsValid && !pair.IsZero, "PAIR_NOT_FOUND");
+            }
+
+            var reserves = (BigInteger[])Contract.Call(pair, "getReserves", CallFlags.ReadOnly);
+            Assert(reserves != null && reserves.Length >= 2, "INVALID_RESERVES");
+            Assert(reserves[0] == 0 && reserves[1] == 0, "PAIR_TAINTED");
 
             BigInteger deadline = Runtime.Time + 3600000;
 
@@ -242,13 +258,13 @@ namespace DuoBondingCurve
                     deadline
                 });
 
+            Assert(amounts != null && amounts.Length >= 3, "INVALID_ADDLIQUIDITY_RESULT");
 
             ClearPendingApproval(tokenHash, pair);
             ClearPendingApproval(GAS.Hash, pair);
 
             BigInteger liquidity = amounts[2];
 
-            // Burn LP tokens to address(0) — abandon ownership for fair launch
             if (liquidity > 0)
             {
                 bool burnOk = (bool)Contract.Call(
