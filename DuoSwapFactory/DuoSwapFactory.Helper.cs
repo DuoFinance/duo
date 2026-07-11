@@ -14,6 +14,7 @@ namespace DuoSwapFactory
         private const string SETTER_KEY = "Setter";
         private const string FEETO_KEY = "FeeTo";
         private const string ROUTER_KEY = "Router";
+        private const string BONDING_KEY = "Bonding";
         private static readonly byte[] PAIR_PREFIX = new byte[] { 0x01 };
         private static Transaction Tx => (Transaction)Runtime.ScriptContainer;
         #endregion
@@ -112,6 +113,24 @@ namespace DuoSwapFactory
         }
         #endregion
 
+        #region Bonding
+        [Safe]
+        public static UInt160 GetBonding()
+        {
+            var bonding = StorageGet(BONDING_KEY);
+            return bonding?.Length == 20 ? (UInt160)bonding : UInt160.Zero;
+        }
+
+        public static void SetBonding(UInt160 bonding)
+        {
+            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
+            Assert(bonding != null && bonding.IsValid && !bonding.IsZero, "Invalid Bonding.");
+            Assert(GetBonding() == UInt160.Zero, "Bonding Locked.");
+            Storage.Put(Storage.CurrentContext, BONDING_KEY, bonding);
+            onSetBonding(bonding);
+        }
+        #endregion
+
         #region Events
         [DisplayName("StorePair")]
         public static event StorePairEvent onStorePair;
@@ -120,6 +139,10 @@ namespace DuoSwapFactory
         [DisplayName("SetRouter")]
         public static event SetRouterEvent onSetRouter;
         public delegate void SetRouterEvent(UInt160 router);
+
+        [DisplayName("SetBonding")]
+        public static event SetBondingEvent onSetBonding;
+        public delegate void SetBondingEvent(UInt160 bonding);
 
         [DisplayName("OwnershipTransferred")]
         public static event OnOwnershipTransferredEvent onOwnershipTransferred;

@@ -80,6 +80,13 @@ namespace DuoSwapPair
             var factory = StorageGet(FACTORY_KEY);
             return factory?.Length == 20 ? (UInt160)factory : UInt160.Zero;
         }
+
+        [Safe]
+        public static UInt160 GetBonding()
+        {
+            var bonding = (byte[])Contract.Call(GetFactory(), "getBonding", CallFlags.ReadOnly);
+            return bonding?.Length == 20 ? (UInt160)bonding : UInt160.Zero;
+        }
         #endregion
 
         #region KLast

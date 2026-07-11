@@ -342,6 +342,7 @@ public class DuoBondingCurveFlowTests
 
         var (bn, bm) = LoadContract("DuoBondingCurve");
         var bondingCurve = DeployContract(engine, bn, bm, new object[] { factory, router });
+        Invoke(engine, factory, "setBonding", bondingCurve);
 
         return (engine, factory, router, bondingCurve);
     }

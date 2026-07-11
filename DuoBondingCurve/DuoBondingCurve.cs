@@ -8,7 +8,7 @@ namespace DuoBondingCurve
 {
     [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity", "getReserves" })]
+    [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity", "getReserves", "mint", "getReserve0", "getReserve1" })]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation
@@ -201,22 +201,56 @@ namespace DuoBondingCurve
         {
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
+            UInt160 self = Runtime.ExecutingScriptHash;
 
             BigInteger raisedGAS = sale.GASRaised;
             BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
             Assert(remainingTokens > 0, "NO_TOKENS_FOR_LP");
 
-            // 先查詢 pair 是否已存在(冪等性檢查),不管是誰、什麼原因造成它已存在,
-            // 都直接沿用,不重新觸發部署。
             UInt160 pair = (UInt160)Contract.Call(
                 factory, "getPairHash", CallFlags.ReadOnly,
                 new object[] { tokenHash, GAS.Hash });
+
+            // Anti-sniping: if pair exists with non-zero reserves,
+            // direct-mint LP and burn to zero — attacker gets nothing.
+            if (pair.IsValid && !pair.IsZero)
+            {
+                BigInteger reserve0 = (BigInteger)Contract.Call(pair, "getReserve0", CallFlags.ReadOnly);
+                BigInteger reserve1 = (BigInteger)Contract.Call(pair, "getReserve1", CallFlags.ReadOnly);
+
+                if (reserve0 > 0 || reserve1 > 0)
+                {
+                    bool tokensOk = (bool)Contract.Call(
+                        tokenHash, "transfer", CallFlags.All,
+                        new object[] { self, pair, remainingTokens, null });
+                    Assert(tokensOk, "TOKEN_TRANSFER_FAILED");
+
+                    bool gasOk = (bool)Contract.Call(
+                        GAS.Hash, "transfer", CallFlags.All,
+                        new object[] { self, pair, raisedGAS, null });
+                    Assert(gasOk, "GAS_TRANSFER_FAILED");
+
+                    BigInteger mintedLiquidity = (BigInteger)Contract.Call(
+                        pair, "mint", CallFlags.All,
+                        new object[] { self });
+                    Assert(mintedLiquidity > 0, "ZERO_LIQUIDITY_MINTED");
+
+                    bool burnOk = (bool)Contract.Call(
+                        pair, "transfer", CallFlags.All,
+                        new object[] { self, UInt160.Zero, mintedLiquidity, null });
+                    Assert(burnOk, "LP_BURN_FAILED");
+
+                    sale.Graduated = true;
+                    StoreSale(tokenHash, sale);
+                    OnSaleCompleted(tokenHash, sale.Symbol, pair, mintedLiquidity, remainingTokens, raisedGAS);
+                    return;
+                }
+            }
 
             BigInteger gasForLiquidity;
 
             if (pair.IsValid && !pair.IsZero)
             {
-                // pair 已存在,不需要支付部署費,全部募集到的 GAS 都拿去加流動性
                 gasForLiquidity = raisedGAS;
             }
             else
@@ -236,13 +270,6 @@ namespace DuoBondingCurve
                     new object[] { tokenHash, GAS.Hash });
                 Assert(pair.IsValid && !pair.IsZero, "PAIR_NOT_FOUND");
             }
-
-            // 注意:此處刻意不檢查 pair 現有 reserves 是否為零。
-            // mint() 本身是依「轉入後餘額 - 已記錄 reserve」計算新增流動性,
-            // 即使 pair 已有殘留資產,也不會導致資金被盜,頂多是初始價格略有偏移。
-            // 若在此加上「reserves 必須為 0」的硬性 Assert,只要 pair 曾被任何人
-            // (無論有心或無意)存入過任何資產,就會讓整個畢業流程永久卡死,
-            // 這個風險遠大於「初始價格輕微偏移」本身。
 
             BigInteger deadline = Runtime.Time + 3600000;
 

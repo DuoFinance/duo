@@ -8,7 +8,7 @@ namespace DuoSwapPair
 {
     [ManifestExtra("Description", "DuoSwap Pair Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "balanceOf", "transfer", "getFeeTo", "onNEP17Payment" })]
+    [ContractPermission("*", new[] { "balanceOf", "transfer", "getFeeTo", "getBonding", "onNEP17Payment" })]
     public partial class DuoSwapPairContract : SmartContract
     {
         private const long MINIMUM_LIQUIDITY = 1000;
@@ -87,7 +87,7 @@ namespace DuoSwapPair
             Enter();
 
             Assert(toAddress.IsAddress(), "BAD_RECIPIENT");
-            Assert(Runtime.CallingScriptHash == GetRouter(), "ONLY_ROUTER");
+            Assert(Runtime.CallingScriptHash == GetRouter() || Runtime.CallingScriptHash == GetBonding(), "ONLY_ROUTER_OR_BONDING");
 
             UInt160 self = Runtime.ExecutingScriptHash;
             UInt160 token0 = Token0;

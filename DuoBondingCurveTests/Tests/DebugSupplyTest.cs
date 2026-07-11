@@ -28,6 +28,7 @@ public class DebugSupplyTest
         Invoke(engine, factory, "setRouter", router);
         var (bn, bm) = LoadContract("DuoBondingCurve");
         var bondingCurve = DeployContract(engine, bn, bm, new object[] { factory, router });
+        Invoke(engine, factory, "setBonding", bondingCurve);
 
         var bcState = engine.Native.ContractManagement.GetContract(bondingCurve);
         int bcId = bcState.Id;
