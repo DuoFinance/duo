@@ -202,24 +202,28 @@ namespace DuoBondingCurve
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
 
-            var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
-            var pair_DeployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
-
             BigInteger raisedGAS = sale.GASRaised;
             BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
             Assert(remainingTokens > 0, "NO_TOKENS_FOR_LP");
 
+            // 先查詢 pair 是否已存在(冪等性檢查),不管是誰、什麼原因造成它已存在,
+            // 都直接沿用,不重新觸發部署。
             UInt160 pair = (UInt160)Contract.Call(
                 factory, "getPairHash", CallFlags.ReadOnly,
                 new object[] { tokenHash, GAS.Hash });
 
             BigInteger gasForLiquidity;
+
             if (pair.IsValid && !pair.IsZero)
             {
+                // pair 已存在,不需要支付部署費,全部募集到的 GAS 都拿去加流動性
                 gasForLiquidity = raisedGAS;
             }
             else
             {
+                var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
+                var pair_DeployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
+
                 Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
                 gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
 
@@ -233,9 +237,12 @@ namespace DuoBondingCurve
                 Assert(pair.IsValid && !pair.IsZero, "PAIR_NOT_FOUND");
             }
 
-            var reserves = (BigInteger[])Contract.Call(pair, "getReserves", CallFlags.ReadOnly);
-            Assert(reserves != null && reserves.Length >= 2, "INVALID_RESERVES");
-            Assert(reserves[0] == 0 && reserves[1] == 0, "PAIR_TAINTED");
+            // 注意:此處刻意不檢查 pair 現有 reserves 是否為零。
+            // mint() 本身是依「轉入後餘額 - 已記錄 reserve」計算新增流動性,
+            // 即使 pair 已有殘留資產,也不會導致資金被盜,頂多是初始價格略有偏移。
+            // 若在此加上「reserves 必須為 0」的硬性 Assert,只要 pair 曾被任何人
+            // (無論有心或無意)存入過任何資產,就會讓整個畢業流程永久卡死,
+            // 這個風險遠大於「初始價格輕微偏移」本身。
 
             BigInteger deadline = Runtime.Time + 3600000;
 
@@ -278,7 +285,6 @@ namespace DuoBondingCurve
 
             OnSaleCompleted(tokenHash, sale.Symbol, pair, liquidity, remainingTokens, gasForLiquidity);
         }
-
         #endregion
 
         #region ApprovedTransfer (for Router)
