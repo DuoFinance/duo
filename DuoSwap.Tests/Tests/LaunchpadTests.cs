@@ -46,5 +46,44 @@ public class LaunchpadTests
         Assert.Contains("ASSERT", ex.Message);
     }
 
-    
+    [Fact]
+    public void Launchpad_Transfer_Succeeds()
+    {
+        var engine = CreateEngine();
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (nef, manifest) = LoadContract("DuoLaunchpad");
+        var hash = DeployContract(engine, nef, manifest, null);
+
+        var decimals = (byte)8;
+        var symbol = "LAUNCH";
+        var supply = new BigInteger(100_000_000_000_000);
+        Invoke(engine, hash, "initialise", Owner, decimals, symbol, supply);
+
+        var transferAmount = new BigInteger(1_000_000_000_000);
+        Invoke(engine, hash, "transfer", Owner, User, transferAmount, null);
+        Assert.Equal(transferAmount, Invoke(engine, hash, "balanceOf", User).GetInteger());
+        Assert.Equal(supply - transferAmount, Invoke(engine, hash, "balanceOf", Owner).GetInteger());
+    }
+
+    [Fact]
+    public void Launchpad_Transfer_InsufficientBalance_Fails()
+    {
+        var engine = CreateEngine();
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (nef, manifest) = LoadContract("DuoLaunchpad");
+        var hash = DeployContract(engine, nef, manifest, null);
+
+        var decimals = (byte)8;
+        var symbol = "LAUNCH";
+        var supply = new BigInteger(100_000_000_000_000);
+        Invoke(engine, hash, "initialise", Owner, decimals, symbol, supply);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
+        var result = Invoke(engine, hash, "transfer", User, Owner, supply, null);
+        Assert.False(result.GetBoolean());
+    }
+
+
 }

@@ -68,7 +68,7 @@ public class CrossContractTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });

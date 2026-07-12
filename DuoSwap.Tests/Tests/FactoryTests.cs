@@ -17,7 +17,7 @@ public class FactoryTests
         _engine = CreateEngine();
 
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, null);
+        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         _routerHash = DeployContract(_engine, routerNef, routerManifest, new object[] { _factoryHash });
@@ -50,7 +50,8 @@ public class FactoryTests
     public void GetSetter_ReturnsInitialSetter()
     {
         var result = Invoke(_engine, _factoryHash, "getSetter");
-        Assert.NotNull(result);
+        var actualSetter = new UInt160(result.GetSpan());
+        Assert.Equal(Owner, actualSetter);
     }
 
     [Fact]
@@ -114,7 +115,7 @@ public class FactoryTests
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
         var ex = Assert.ThrowsAny<Exception>(() =>
@@ -129,7 +130,7 @@ public class FactoryTests
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });
@@ -147,7 +148,7 @@ public class FactoryTests
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var newSetter = new UInt160(new byte[] { 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
@@ -163,7 +164,7 @@ public class FactoryTests
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });

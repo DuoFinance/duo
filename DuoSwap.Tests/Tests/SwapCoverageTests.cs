@@ -20,7 +20,7 @@ public class SwapCoverageTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
@@ -169,7 +169,7 @@ public class SwapCoverageTests
     {
         var engine = CreateEngine();
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var tokenA = UInt160.Parse("0x0000000000000000000000000000000000000001");
         var ex = Assert.ThrowsAny<Exception>(() =>
@@ -197,7 +197,7 @@ public class SwapCoverageTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
@@ -225,7 +225,7 @@ public class SwapCoverageTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });

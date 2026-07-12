@@ -149,4 +149,98 @@ public class StakingTests
         Assert.Equal(0, userInfo[0].GetInteger()); // 0 LP staked
         Assert.Equal(1_000_000, Invoke(_engine, lpToken, "balanceOf", User).GetInteger()); // All LP returned
     }
+
+    [Fact]
+    public void Staking_GetPoolInfo_InvalidPid_Fails()
+    {
+        var engine = CreateEngine();
+        var (stakingNef, stakingManifest) = LoadContract("DuoStaking");
+        var stakingHash = DeployContract(engine, stakingNef, stakingManifest, null);
+
+        Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, stakingHash, "getPoolInfo", BigInteger.Zero));
+    }
+
+    [Fact]
+    public void Staking_Update_NonOwner_Fails()
+    {
+        var engine = CreateEngine();
+        var (stakingNef, stakingManifest) = LoadContract("DuoStaking");
+        var stakingHash = DeployContract(engine, stakingNef, stakingManifest, null);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, stakingHash, "update", new byte[] { 0x01 }, "{}", null));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Staking_GetRewardToken_ReturnsZeroBeforeInit()
+    {
+        var result = Invoke(_engine, _stakingHash, "getRewardToken");
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void Staking_UserFlow_AddRewards_Recover_Success()
+    {
+        var engine = CreateEngine();
+        var (stakingNef, stakingManifest) = LoadContract("DuoStaking");
+        var stakingHash = DeployContract(engine, stakingNef, stakingManifest, null);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (rewardNef, rewardManifest) = LoadContract("DuoToken");
+        rewardManifest.Name = "RewardToken";
+        var rewardToken = DeployContract(engine, rewardNef, rewardManifest, null);
+
+        var (lpNef, lpManifest) = LoadContract("DuoToken");
+        lpManifest.Name = "LpToken";
+        var lpToken = DeployContract(engine, lpNef, lpManifest, null);
+
+        BigInteger supply = 1_000_000_000_000;
+        Invoke(engine, rewardToken, "initialise", Owner, supply);
+        Invoke(engine, lpToken, "initialise", Owner, supply);
+
+        Invoke(engine, stakingHash, "initialise", rewardToken);
+        Assert.True(Invoke(engine, stakingHash, "isInitialised").GetBoolean());
+
+        Invoke(engine, stakingHash, "addPool", lpToken);
+        Assert.Equal(1, Invoke(engine, stakingHash, "getPoolCount").GetInteger());
+
+        Invoke(engine, stakingHash, "fundAndStartRewards", BigInteger.Zero, 100_000_000, 100);
+        Assert.Equal(100_000_000, Invoke(engine, stakingHash, "getReservedRewards").GetInteger());
+
+        Invoke(engine, stakingHash, "addRewards", BigInteger.Zero, 50_000_000, 50);
+        Assert.Equal(150_000_000, Invoke(engine, stakingHash, "getReservedRewards").GetInteger());
+        Assert.True(Invoke(engine, stakingHash, "rewardPerBlock", BigInteger.Zero).GetInteger() > 0);
+        Assert.True(Invoke(engine, stakingHash, "rewardEndBlock", BigInteger.Zero).GetInteger() > 0);
+    }
+
+    [Fact]
+    public void Staking_AddRewards_NotStarted_Fails()
+    {
+        var engine = CreateEngine();
+        var (stakingNef, stakingManifest) = LoadContract("DuoStaking");
+        var stakingHash = DeployContract(engine, stakingNef, stakingManifest, null);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (rewardNef, rewardManifest) = LoadContract("DuoToken");
+        rewardManifest.Name = "RewardToken";
+        var rewardToken = DeployContract(engine, rewardNef, rewardManifest, null);
+
+        var (lpNef, lpManifest) = LoadContract("DuoToken");
+        lpManifest.Name = "LpToken";
+        var lpToken = DeployContract(engine, lpNef, lpManifest, null);
+
+        Invoke(engine, rewardToken, "initialise", Owner, 1_000_000_000_000);
+        Invoke(engine, lpToken, "initialise", Owner, 1_000_000_000_000);
+        Invoke(engine, stakingHash, "initialise", rewardToken);
+        Invoke(engine, stakingHash, "addPool", lpToken);
+
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, stakingHash, "addRewards", BigInteger.Zero, 50_000_000, 50));
+        Assert.Contains("ASSERT", ex.Message);
+    }
 }

@@ -16,7 +16,6 @@ namespace DuoSwapFactory
         private const string ROUTER_KEY = "Router";
         private const string BONDING_KEY = "Bonding";
         private static readonly byte[] PAIR_PREFIX = new byte[] { 0x01 };
-        private static Transaction Tx => (Transaction)Runtime.ScriptContainer;
         #endregion
 
         #region Deploy
@@ -26,7 +25,9 @@ namespace DuoSwapFactory
         public static void _deploy(object data, bool update)
         {
             Assert(!update, "Not Upgradable.");
-            StoragePut(SETTER_KEY, Tx.Sender);
+            UInt160 setter = (UInt160)data;
+            Assert(setter.IsValid && !setter.IsZero, "Invalid Setter Address.");
+            StoragePut(SETTER_KEY, setter);
         }
         #endregion
 

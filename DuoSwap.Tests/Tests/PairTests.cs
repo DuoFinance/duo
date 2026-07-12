@@ -25,7 +25,7 @@ public class PairTests
         _tokenB = new UInt160(new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
 
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, null);
+        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         _routerHash = DeployContract(_engine, routerNef, routerManifest, new object[] { _factoryHash });
@@ -153,5 +153,15 @@ public class PairTests
                 BigInteger.One, BigInteger.Zero, _pairHash, new byte[] { });
         });
         Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Pair_GetBonding_ReturnsFromFactory()
+    {
+        var bondingAddr = new UInt160(new byte[] { 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        Invoke(_engine, _factoryHash, "setBonding", bondingAddr);
+
+        var result = Invoke(_engine, _pairHash, "getBonding");
+        Assert.Equal(bondingAddr, new UInt160(result.GetSpan()));
     }
 }

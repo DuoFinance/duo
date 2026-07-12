@@ -26,7 +26,7 @@ public class FeeToTests
         _engine = engine;
 
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, null);
+        _factoryHash = DeployContract(_engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         _routerHash = DeployContract(_engine, routerNef, routerManifest, new object[] { _factoryHash });

@@ -18,7 +18,7 @@ public class RouterTests
         _engine = CreateEngine();
 
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(_engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(_engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         _routerHash = DeployContract(_engine, routerNef, routerManifest, new object[] { factoryHash });
@@ -148,7 +148,7 @@ public class RouterTests
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });
@@ -166,5 +166,11 @@ public class RouterTests
             Owner, tokenA, tokenB,
             1000, 1000, 0, 0, -1));
         Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Router_OnNEP17Payment_NoOp()
+    {
+        Invoke(_engine, _routerHash, "onNEP17Payment", Owner, BigInteger.One, null);
     }
 }

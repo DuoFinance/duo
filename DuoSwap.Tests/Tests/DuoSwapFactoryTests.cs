@@ -17,7 +17,7 @@ public class DuoSwapFactoryTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
@@ -86,7 +86,7 @@ public class DuoSwapFactoryTests
         var engine = CreateEngine();
         
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
-        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, null);
+        var factoryHash = DeployContract(engine, factoryNef, factoryManifest, Owner);
 
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });
@@ -140,7 +140,8 @@ public class DuoSwapFactoryTests
         var (engine, factory, _, _, _) = DeployCore();
 
         var result = Invoke(engine, factory, "getSetter");
-        Assert.NotNull(result);
+        var actualSetter = new UInt160(result.GetSpan());
+        Assert.Equal(Owner, actualSetter);
     }
 
     [Fact]
@@ -224,7 +225,7 @@ public class DuoSwapFactoryTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (tn, tma) = LoadContract("DuoToken");
         tma.Name = "DuoTokenA";
@@ -254,6 +255,48 @@ public class DuoSwapFactoryTests
                 }
             });
         var ex = Assert.ThrowsAny<Exception>(() => engine.Execute(script));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Factory_GetBonding_ReturnsZeroInitially()
+    {
+        var (engine, factory, _, _, _) = DeployCore();
+
+        var result = Invoke(engine, factory, "getBonding");
+        var bonding = result.GetSpan();
+        Assert.True(bonding.Length == 0 || new UInt160(bonding) == UInt160.Zero);
+    }
+
+    [Fact]
+    public void Factory_SetBonding_UpdatesAndLocks()
+    {
+        var (engine, factory, _, _, _) = DeployCore();
+
+        var bondingAddr = new UInt160(new byte[] { 0x0a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        Invoke(engine, factory, "setBonding", bondingAddr);
+
+        var result = Invoke(engine, factory, "getBonding");
+        Assert.Equal(bondingAddr, new UInt160(result.GetSpan()));
+
+        var anotherBonding = new UInt160(new byte[] { 0x0d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, factory, "setBonding", anotherBonding));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Factory_SetBonding_NonSetterCaller_Fails()
+    {
+        var engine = CreateEngine();
+        var (fn, fm) = LoadContract("DuoSwapFactory");
+        var factoryHash = DeployContract(engine, fn, fm, Owner);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
+
+        var bondingAddr = new UInt160(new byte[] { 0x0b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, factoryHash, "setBonding", bondingAddr));
         Assert.Contains("ASSERT", ex.Message);
     }
 }

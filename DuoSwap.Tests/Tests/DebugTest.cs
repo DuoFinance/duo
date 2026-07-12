@@ -19,7 +19,7 @@ public class DebugTest
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (fn, fm) = LoadContract("DuoSwapFactory");
-        var factory = DeployContract(engine, fn, fm, null);
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
