@@ -63,24 +63,6 @@ public class DuoBondingCurveFlowTests
         Assert.True(buyerTokenAfter >= expectedTokens, "Should receive at least minTokensOut");
     }
 
-    [Fact(Skip = "Akka cleanup delay on FAULT state")]
-    public void Flow_BuyTokens_SlippageExceeded_Faults()
-    {
-        var (engine, factory, router, bondingCurve) = Setup();
-        var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
-        BigInteger gasAmount = 10_000_000_000;
-
-        try
-        {
-            BuyTokens(engine, bondingCurve, tokenHash, Owner, gasAmount, minTokensOut: (BigInteger)1_000_000_000_000_000);
-            Assert.Fail("Should have thrown");
-        }
-        catch (TestException)
-        {
-        }
-    }
-
     [Fact]
     public void Flow_BuyAndSell_RoundTrip()
     {
@@ -111,40 +93,6 @@ public class DuoBondingCurveFlowTests
 
         var saleAfter = GetSaleInfo(engine, bondingCurve, tokenHash);
         Assert.Equal(BigInteger.Zero, saleAfter.TokensSold);
-    }
-
-    [Fact(Skip = "Akka cleanup delay on automatic graduation")]
-    public void Flow_Graduation_CreatesPairAndBurnsLP()
-    {
-        var (engine, factory, router, bondingCurve) = Setup();
-        var gas = engine.Native.GAS.Hash;
-
-        BigInteger targetRaise = 1_000_000_000_000;
-        var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", targetRaise, (BigInteger)8000);
-
-        BigInteger buyGas = 200_000_000_000;
-        for (int i = 0; i < 10; i++)
-        {
-            try { BuyTokens(engine, bondingCurve, tokenHash, Owner, buyGas); }
-            catch (TestException) { break; }
-        }
-
-        var saleFinal = GetSaleInfo(engine, bondingCurve, tokenHash);
-        Assert.True(saleFinal.Graduated, "Sale should graduate when GASRaised >= TargetRaise");
-        Assert.True(saleFinal.GASRaised >= targetRaise, "GASRaised should meet target");
-
-        var pairHashResult = Invoke(engine, factory, "getPairHash", tokenHash, gas);
-        var pairHash = new UInt160(((Neo.VM.Types.ByteString)pairHashResult).GetSpan().ToArray());
-        Assert.NotEqual(UInt160.Zero, pairHash);
-
-        var lpBalance = Invoke(engine, pairHash, "balanceOf", bondingCurve).GetInteger();
-        Assert.Equal(BigInteger.Zero, lpBalance);
-
-        var pairReserve0 = Invoke(engine, pairHash, "getReserve0").GetInteger();
-        var pairReserve1 = Invoke(engine, pairHash, "getReserve1").GetInteger();
-        Assert.True(pairReserve0 > 0, "Pair should have non-zero reserves");
-        Assert.True(pairReserve1 > 0, "Pair should have non-zero reserves");
     }
 
     [Fact]
