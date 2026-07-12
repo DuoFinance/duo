@@ -23,7 +23,7 @@ namespace DuoBondingCurve
             Assert(decimals >= 0 && decimals <= 18, "INVALID_DECIMALS");
             Assert(totalSupply > 0, "INVALID_SUPPLY");
             Assert(targetRaise > 0, "INVALID_TARGET");
-            Assert(graduationBps > 5000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
+            Assert(graduationBps > 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
 
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
