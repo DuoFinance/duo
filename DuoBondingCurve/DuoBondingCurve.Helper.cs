@@ -223,10 +223,23 @@ namespace DuoBondingCurve
             return result;
         }
 
-        internal static string BuildImmutableTokenManifest(string name)
+        internal static string BuildImmutableTokenManifest(string name, string team, string contact, string description)
         {
             string safeName = EscapeJsonString(name);
-            return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":835,\"safe\":false},{\"name\":\"initialise\",\"parameters\":[{\"name\":\"sender\",\"type\":\"Hash160\"},{\"name\":\"decimals\",\"type\":\"Integer\"},{\"name\":\"symbol\",\"type\":\"String\"},{\"name\":\"totalSupply\",\"type\":\"Integer\"}],\"returntype\":\"Void\",\"offset\":997,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1199,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":{}}";
+            string extra = "{}";
+            bool hasTeam = !string.IsNullOrEmpty(team);
+            bool hasContact = !string.IsNullOrEmpty(contact);
+            bool hasDesc = !string.IsNullOrEmpty(description);
+            if (hasTeam || hasContact || hasDesc)
+            {
+                extra = "{";
+                bool first = true;
+                if (hasTeam)    { extra += "\"team\":\"" + EscapeJsonString(team) + "\""; first = false; }
+                if (hasContact) { extra += (first ? "" : ",") + "\"contact\":\"" + EscapeJsonString(contact) + "\""; first = false; }
+                if (hasDesc)    { extra += (first ? "" : ",") + "\"description\":\"" + EscapeJsonString(description) + "\""; }
+                extra += "}";
+            }
+            return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":835,\"safe\":false},{\"name\":\"initialise\",\"parameters\":[{\"name\":\"sender\",\"type\":\"Hash160\"},{\"name\":\"decimals\",\"type\":\"Integer\"},{\"name\":\"symbol\",\"type\":\"String\"},{\"name\":\"totalSupply\",\"type\":\"Integer\"}],\"returntype\":\"Void\",\"offset\":997,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1199,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":" + extra + "}";
         }
 
         internal static byte[] GetLaunchpadNef()

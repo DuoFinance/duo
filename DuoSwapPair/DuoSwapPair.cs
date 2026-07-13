@@ -8,7 +8,7 @@ namespace DuoSwapPair
 {
     [ManifestExtra("Description", "DuoSwap Pair Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "balanceOf", "transfer", "getFeeTo", "getBonding", "onNEP17Payment" })]
+    [ContractPermission("*", new[] { "balanceOf", "transfer", "getFeeTo", "onNEP17Payment" })]
     public partial class DuoSwapPairContract : SmartContract
     {
         private const long MINIMUM_LIQUIDITY = 1000;

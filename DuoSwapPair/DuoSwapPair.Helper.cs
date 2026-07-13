@@ -13,6 +13,7 @@ namespace DuoSwapPair
         #region Storage Keys
         private const string FACTORY_KEY = "Factory";
         private const string ROUTER_KEY = "Router";
+        private const string BONDING_KEY = "Bonding";
         private const string SYMBOL_KEY = "Symbol";
         private const string INIT_KEY = "Init";
         private const string KLAST_KEY = "KLast";
@@ -38,7 +39,7 @@ namespace DuoSwapPair
         /// <summary>
         /// Initialize the pair info, only can be called once by factory after the pair is deployed.
         /// </summary>
-        public static void InitialisePair(UInt160 tokenA, UInt160 tokenB, string pairSymbol, UInt160 Router)
+        public static void InitialisePair(UInt160 tokenA, UInt160 tokenB, string pairSymbol, UInt160 Router, UInt160 Bonding)
         {
             BigInteger initialised = (BigInteger)StorageGet(INIT_KEY);
             Assert(initialised == 0, "Forbidden.");
@@ -49,6 +50,7 @@ namespace DuoSwapPair
             Assert(pairSymbol != null && pairSymbol.Length > 0, "Invalid Symbol.");
             Storage.Put(SYMBOL_KEY, pairSymbol);
             Storage.Put(ROUTER_KEY, Router);
+            Storage.Put(BONDING_KEY, Bonding);
 
             if (tokenA.ToUInteger() < tokenB.ToUInteger())
             {
@@ -84,7 +86,7 @@ namespace DuoSwapPair
         [Safe]
         public static UInt160 GetBonding()
         {
-            var bonding = (byte[])Contract.Call(GetFactory(), "getBonding", CallFlags.ReadOnly);
+            var bonding = StorageGet(BONDING_KEY);
             return bonding?.Length == 20 ? (UInt160)bonding : UInt160.Zero;
         }
         #endregion

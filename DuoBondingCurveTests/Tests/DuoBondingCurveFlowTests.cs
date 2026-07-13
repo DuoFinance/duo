@@ -179,12 +179,15 @@ public class DuoBondingCurveFlowTests
         BigInteger totalSupply, byte decimals, string symbol,
         BigInteger targetRaise, BigInteger graduationBps)
     {
+        // Convert display supply to raw (matching CreateSale logic)
+        BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals);
+
         var (ln, lm) = LoadContract("DuoLaunchpad");
         var tokenHash = DeployContract(engine, ln, lm, null);
 
-        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, totalSupply);
+        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, rawSupply);
 
-        return WriteSaleToStorage(engine, bondingCurve, tokenHash, totalSupply, symbol, targetRaise, graduationBps);
+        return WriteSaleToStorage(engine, bondingCurve, tokenHash, rawSupply, symbol, targetRaise, graduationBps);
     }
 
     private static UInt160 WriteSaleToStorage(TestEngine engine, UInt160 bondingCurve,

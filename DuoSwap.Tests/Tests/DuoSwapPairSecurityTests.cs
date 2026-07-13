@@ -68,7 +68,7 @@ public class DuoSwapPairSecurityTests
         
         var ex = Assert.ThrowsAny<Exception>(() =>
         {
-            Invoke(engine, pair, "initialisePair", tokenA, tokenB, "TEST-PAIR", router);
+            Invoke(engine, pair, "initialisePair", tokenA, tokenB, "TEST-PAIR", router, UInt160.Zero);
         });
         Assert.Contains("ASSERT", ex.Message);
     }

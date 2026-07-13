@@ -156,12 +156,9 @@ public class PairTests
     }
 
     [Fact]
-    public void Pair_GetBonding_ReturnsFromFactory()
+    public void Pair_GetBonding_ReturnsZeroByDefault()
     {
-        var bondingAddr = new UInt160(new byte[] { 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
-        Invoke(_engine, _factoryHash, "setBonding", bondingAddr);
-
         var result = Invoke(_engine, _pairHash, "getBonding");
-        Assert.Equal(bondingAddr, new UInt160(result.GetSpan()));
+        Assert.Equal(UInt160.Zero, new UInt160(result.GetSpan()));
     }
 }

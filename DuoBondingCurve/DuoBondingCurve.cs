@@ -13,17 +13,28 @@ namespace DuoBondingCurve
     {
         #region Sale Creation
 
-        public static void CreateSale(string name, string symbol, BigInteger totalSupplyWithDecimals, BigInteger targetRaise, BigInteger graduationBps)
+        public static void CreateSale(
+            string name, 
+            string symbol, 
+            BigInteger totalSupply, 
+            BigInteger decimals, 
+            BigInteger targetRaise, 
+            BigInteger graduationBps,
+            string team,
+            string contact,
+            string description
+            )
         {
             Enter();
             Assert(name.Length > 0 && name.Length <= 64, "INVALID_NAME");
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
-            BigInteger totalSupply = totalSupplyWithDecimals >> 8;
-            BigInteger decimals = totalSupplyWithDecimals & 255;
             Assert(decimals >= 0 && decimals <= 18, "INVALID_DECIMALS");
             Assert(totalSupply > 0, "INVALID_SUPPLY");
             Assert(targetRaise > 0, "INVALID_TARGET");
             Assert(graduationBps > 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
+            Assert(team == null || team.Length <= 64, "INVALID_TEAM_TOO_LONG");
+            Assert(contact == null || contact.Length <= 128, "INVALID_CONTACT_TOO_LONG");
+            Assert(description == null || description.Length <= 256, "INVALID_DESCRIPTION_TOO_LONG");
 
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
@@ -37,7 +48,7 @@ namespace DuoBondingCurve
             Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
-            string manifest = BuildImmutableTokenManifest(name);
+            string manifest = BuildImmutableTokenManifest(name, team, contact, description);
             Contract newContract = ContractManagement.Deploy(nef.ToByteString(), manifest);
             UInt160 tokenHash = newContract.Hash;
 
@@ -51,6 +62,7 @@ namespace DuoBondingCurve
             BigInteger pSquared = graduationBps * graduationBps;
             BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
             BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
+            Assert(vToken > 0 && vGas > 0, "INVALID_VIRTUAL_RESERVES");
 
             SaleInfo info = new SaleInfo
             {

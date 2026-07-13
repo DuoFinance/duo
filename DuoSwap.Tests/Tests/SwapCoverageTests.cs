@@ -111,7 +111,7 @@ public class SwapCoverageTests
 
         var gas = e.Native.GAS.Hash;
         var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(e, pair, "initialisePair", gas, gas, "TEST", Owner));
+            Invoke(e, pair, "initialisePair", gas, gas, "TEST", Owner, UInt160.Zero));
         Assert.Contains("ASSERT", ex.Message);
     }
 

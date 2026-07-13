@@ -36,16 +36,17 @@ public class DebugSupplyTest
         var (ln, lm) = LoadContract("DuoLaunchpad");
         var tokenHash = DeployContract(engine, ln, lm, null);
 
-        BigInteger totalSupply = 1_000_000_000;
+        BigInteger totalSupply = 1_000_000_000; // display
         byte decimals = 8;
+        BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals); // raw
         string symbol = "TST";
-        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, totalSupply);
+        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, rawSupply);
 
         BigInteger targetRaise = 100_000_000_000;
         BigInteger graduationBps = 5001;
         BigInteger twoPminusOne = 2 * graduationBps - 10000;
         BigInteger pSquared = graduationBps * graduationBps;
-        BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
+        BigInteger vToken = rawSupply * pSquared / (10000 * twoPminusOne);
         BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
         // Build the serialized SaleInfo map (matching StdLib.Serialize format for struct)
@@ -53,7 +54,7 @@ public class DebugSupplyTest
         map[(BigInteger)0] = (Neo.VM.Types.ByteString)tokenHash.GetSpan().ToArray();
         map[(BigInteger)1] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
         map[(BigInteger)2] = (Neo.VM.Types.ByteString)Encoding.UTF8.GetBytes(symbol);
-        map[(BigInteger)3] = new Integer(totalSupply);
+        map[(BigInteger)3] = new Integer(rawSupply);
         map[(BigInteger)4] = new Integer(BigInteger.Zero);
         map[(BigInteger)5] = new Integer(BigInteger.Zero);
         map[(BigInteger)6] = new Integer(targetRaise);
@@ -75,7 +76,7 @@ public class DebugSupplyTest
         var result = Invoke(engine, bondingCurve, "getSaleInfo", tokenHash);
         var resultMap = (Neo.VM.Types.Map)result;
 
-        Assert.Equal(totalSupply, resultMap[(BigInteger)3].GetInteger());
+        Assert.Equal(rawSupply, resultMap[(BigInteger)3].GetInteger());
         Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)4].GetInteger());
         Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)5].GetInteger());
         Assert.Equal(targetRaise, resultMap[(BigInteger)6].GetInteger());
