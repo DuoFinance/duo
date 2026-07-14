@@ -16,8 +16,6 @@ namespace DuoBondingCurve
         public static void CreateSale(
             string name, 
             string symbol, 
-            BigInteger totalSupply, 
-            BigInteger decimals, 
             BigInteger targetRaise, 
             BigInteger graduationBps,
             string team,
@@ -26,10 +24,27 @@ namespace DuoBondingCurve
             )
         {
             Enter();
+            BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
+            BigInteger decimals = DEFAULT_DECIMALS;
+            CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, team, contact, description, Tx.Sender);
+            Exit();
+        }
+
+        private static UInt160 CreateSaleInternal(
+            string name,
+            string symbol,
+            BigInteger totalSupply,
+            BigInteger decimals,
+            BigInteger targetRaise,
+            BigInteger graduationBps,
+            string team,
+            string contact,
+            string description,
+            UInt160 creator
+            )
+        {
             Assert(name.Length > 0 && name.Length <= 64, "INVALID_NAME");
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
-            Assert(decimals >= 0 && decimals <= 18, "INVALID_DECIMALS");
-            Assert(totalSupply > 0, "INVALID_SUPPLY");
             Assert(targetRaise > 0, "INVALID_TARGET");
             Assert(graduationBps > 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
             Assert(team == null || team.Length <= 64, "INVALID_TEAM_TOO_LONG");
@@ -55,10 +70,6 @@ namespace DuoBondingCurve
             Contract.Call(tokenHash, "initialise", CallFlags.All,
                 new object[] { Runtime.ExecutingScriptHash, (byte)decimals, symbol, totalSupply });
 
-            // Compute virtual reserves for price continuity at graduation:
-            // vToken = T * P² / 10000 / (2P - 10000)
-            // vGas   = R * (10000 - P) / (2P - 10000)
-
             BigInteger pSquared = graduationBps * graduationBps;
             BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
             BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
@@ -67,7 +78,7 @@ namespace DuoBondingCurve
             SaleInfo info = new SaleInfo
             {
                 TokenHash = tokenHash,
-                Creator = Tx.Sender,
+                Creator = creator,
                 Symbol = symbol,
                 TotalSupply = totalSupply,
                 TokensSold = 0,
@@ -79,9 +90,9 @@ namespace DuoBondingCurve
                 Graduated = false
             };
             StoreSale(tokenHash, info);
-            OnSaleCreated(Tx.Sender, tokenHash, symbol, totalSupply, targetRaise, graduationBps);
+            OnSaleCreated(creator, tokenHash, symbol, totalSupply, targetRaise, graduationBps);
 
-            Exit();
+            return tokenHash;
         }
 
         #endregion
@@ -100,12 +111,19 @@ namespace DuoBondingCurve
             {
                 if (data == null || data.Length == 0) return;
 
-                UInt160 tokenHash = (UInt160)data[0];
-                BigInteger minTokensOut = 0;
-                if (data.Length >= 2 && data[1] != null)
-                    minTokensOut = (BigInteger)data[1];
+                if (data[0] is string && (string)data[0] == "CreateBuy")
+                {
+                    ProcessCreateAndBuy(from, amount, data);
+                }
+                else
+                {
+                    UInt160 tokenHash = (UInt160)data[0];
+                    BigInteger minTokensOut = 0;
+                    if (data.Length >= 2 && data[1] != null)
+                        minTokensOut = (BigInteger)data[1];
 
-                ProcessBuy(from, tokenHash, amount, minTokensOut);
+                    ProcessBuy(from, tokenHash, amount, minTokensOut);
+                }
             }
             else
             {
@@ -117,18 +135,48 @@ namespace DuoBondingCurve
             }
         }
 
-        private static void ProcessBuy(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
+        private static void ProcessCreateAndBuy(UInt160 buyer, BigInteger gasAmount, object[] data)
         {
             Enter();
 
+            Assert(data.Length >= 9, "INVALID_CREATE_DATA");
+
+            string name = (string)data[1];
+            string symbol = (string)data[2];
+            BigInteger targetRaise = (BigInteger)data[3];
+            BigInteger graduationBps = (BigInteger)data[4];
+            string team = data[5] as string;
+            string contact = data[6] as string;
+            string description = data[7] as string;
+            BigInteger minTokensOut = 0;
+            if (data[8] != null)
+                minTokensOut = (BigInteger)data[8];
+
+            BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
+            BigInteger decimals = DEFAULT_DECIMALS;
+
+            UInt160 tokenHash = CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, team, contact, description, buyer);
+
+            ProcessBuyInternal(buyer, tokenHash, gasAmount, minTokensOut);
+
+            Exit();
+        }
+
+        private static void ProcessBuy(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
+        {
+            Enter();
+            ProcessBuyInternal(buyer, tokenHash, gasAmount, minTokensOut);
+            Exit();
+        }
+
+        private static void ProcessBuyInternal(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
+        {
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
-            // Compute tokens from the CP-AMM curve using virtual reserves
             BigInteger tokens = GetAmountOut(sale, gasAmount);
             Assert(tokens > 0, "ZERO_TOKENS");
 
-            // Cap at graduation point: cannot exceed P * TotalSupply
             BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
             BigInteger remainingToGrad = maxTokens - sale.TokensSold;
             BigInteger actualGas = gasAmount;
@@ -146,7 +194,6 @@ namespace DuoBondingCurve
                 }
             }
 
-            // capped token amount they will actually receive.
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
             bool ok = (bool)Contract.Call(
@@ -169,8 +216,6 @@ namespace DuoBondingCurve
             }
 
             OnTokensPurchased(buyer, tokenHash, tokens, actualGas, sale.TokensSold, sale.GASRaised);
-
-            Exit();
         }
 
         #endregion

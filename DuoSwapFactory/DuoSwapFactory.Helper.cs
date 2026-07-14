@@ -108,7 +108,6 @@ namespace DuoSwapFactory
         {
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
             Assert(router != null && router.IsValid && !router.IsZero, "Invalid Router.");
-            Assert(GetRouter() == UInt160.Zero, "Router Locked.");
             Storage.Put(Storage.CurrentContext, ROUTER_KEY, router);
             onSetRouter(router);
         }
@@ -126,7 +125,6 @@ namespace DuoSwapFactory
         {
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
             Assert(bonding != null && bonding.IsValid && !bonding.IsZero, "Invalid Bonding.");
-            Assert(GetBonding() == UInt160.Zero, "Bonding Locked.");
             Storage.Put(Storage.CurrentContext, BONDING_KEY, bonding);
             onSetBonding(bonding);
         }

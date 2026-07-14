@@ -23,7 +23,7 @@ public class DuoBondingCurveFlowTests
         var gas = engine.Native.GAS.Hash;
 
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
         var saleBefore = GetSaleInfo(engine, bondingCurve, tokenHash);
         Assert.Equal(BigInteger.Zero, saleBefore.TokensSold);
@@ -52,7 +52,7 @@ public class DuoBondingCurveFlowTests
     {
         var (engine, factory, router, bondingCurve) = Setup();
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
         BigInteger gasAmount = 10_000_000_000;
 
         var expectedTokens = Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, gasAmount).GetInteger();
@@ -70,7 +70,7 @@ public class DuoBondingCurveFlowTests
         var gas = engine.Native.GAS.Hash;
 
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
         BigInteger buyGas = 10_000_000_000;
         var gasBeforeBuy = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
@@ -103,7 +103,7 @@ public class DuoBondingCurveFlowTests
 
         BigInteger targetRaise = 500_000_000_000;
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", targetRaise, (BigInteger)5001);
+            "TST", targetRaise, (BigInteger)5001);
 
         BigInteger gasBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
         BuyTokens(engine, bondingCurve, tokenHash, Owner, targetRaise * 10);
@@ -122,7 +122,7 @@ public class DuoBondingCurveFlowTests
     {
         var (engine, factory, router, bondingCurve) = Setup();
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
         BigInteger GetPrice()
         {
@@ -148,7 +148,7 @@ public class DuoBondingCurveFlowTests
     {
         var (engine, factory, router, bondingCurve) = Setup();
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
-            (BigInteger)1_000_000_000, 8, "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
         var saleInitial = GetSaleInfo(engine, bondingCurve, tokenHash);
         BigInteger idealK = saleInitial.VirtualGas * saleInitial.VirtualToken;
@@ -176,11 +176,10 @@ public class DuoBondingCurveFlowTests
 
     private static UInt160 SetupSale(TestEngine engine, UInt160 factory, UInt160 router,
         UInt160 bondingCurve,
-        BigInteger totalSupply, byte decimals, string symbol,
+        string symbol,
         BigInteger targetRaise, BigInteger graduationBps)
     {
-        // Convert display supply to raw (matching CreateSale logic)
-        BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals);
+        BigInteger rawSupply = 100000000000000000; byte decimals = 8;
 
         var (ln, lm) = LoadContract("DuoLaunchpad");
         var tokenHash = DeployContract(engine, ln, lm, null);
