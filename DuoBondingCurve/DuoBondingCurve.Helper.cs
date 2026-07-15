@@ -226,19 +226,19 @@ namespace DuoBondingCurve
             return result;
         }
 
-        internal static string BuildImmutableTokenManifest(string name, string team, string contact, string description)
+        internal static string BuildImmutableTokenManifest(string name, string project, string repoUrl, string description)
         {
             string safeName = EscapeJsonString(name);
             string extra = "{}";
-            bool hasTeam = !string.IsNullOrEmpty(team);
-            bool hasContact = !string.IsNullOrEmpty(contact);
+            bool hasProject = !string.IsNullOrEmpty(project);
+            bool hasRepoUrl = !string.IsNullOrEmpty(repoUrl);
             bool hasDesc = !string.IsNullOrEmpty(description);
-            if (hasTeam || hasContact || hasDesc)
+            if (hasProject || hasRepoUrl || hasDesc)
             {
                 extra = "{";
                 bool first = true;
-                if (hasTeam)    { extra += "\"team\":\"" + EscapeJsonString(team) + "\""; first = false; }
-                if (hasContact) { extra += (first ? "" : ",") + "\"contact\":\"" + EscapeJsonString(contact) + "\""; first = false; }
+                if (hasProject)    { extra += "\"project\":\"" + EscapeJsonString(project) + "\""; first = false; }
+                if (hasRepoUrl) { extra += (first ? "" : ",") + "\"repoUrl\":\"" + EscapeJsonString(repoUrl) + "\""; first = false; }
                 if (hasDesc)    { extra += (first ? "" : ",") + "\"description\":\"" + EscapeJsonString(description) + "\""; }
                 extra += "}";
             }

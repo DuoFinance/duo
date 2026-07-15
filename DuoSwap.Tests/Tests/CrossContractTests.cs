@@ -62,6 +62,180 @@ public class CrossContractTests
         Assert.NotNull(result);
     }
 
+    // ── Router contract-caller overload tests (via caller contract) ──
+
+    private (TestEngine engine, UInt160 factory, UInt160 router, UInt160 caller, UInt160 pair, UInt160 tokenA, UInt160 tokenB) DeployCaller()
+    {
+        var (e, f, r, _, ta, tb) = Setup();
+        var pairRes = Invoke(e, f, "getPairHash", ta, tb);
+        var pair = new UInt160(pairRes.GetSpan());
+
+        var (cn, cm) = LoadContract("DuoHoneypot");
+        cm.Name = "DuoHoneypot";
+        var caller = DeployContract(e, cn, cm, new object[] { pair, Owner, r });
+
+        // Include the caller contract hash as a signer so that token.transfer(checkWitness=caller) passes
+        // during the approvedTransfer path (Neo 3.7.4 test engine does not auto-grant witness for contracts
+        // in the invocation stack).
+        e.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner, caller);
+
+        return (e, f, r, caller, pair, ta, tb);
+    }
+
+    [Fact]
+    public void Router_ContractCaller_AddLiquidity()
+    {
+        var (engine, factory, router, caller, pair, tokenA, tokenB) = DeployCaller();
+
+        // Fund caller with both tokens
+        BigInteger fundAmount = 20_000_000_000_00;
+        Invoke(engine, tokenA, "transfer", Owner, caller, fundAmount, null);
+        Invoke(engine, tokenB, "transfer", Owner, caller, fundAmount, null);
+
+        BigInteger tokenABefore = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBBefore = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+        Assert.True(tokenABefore >= fundAmount);
+        Assert.True(tokenBBefore >= fundAmount);
+
+        BigInteger amountADesired = 10_000_000_000_00;
+        BigInteger amountBDesired = 10_000_000_000_00;
+        BigInteger deadline = long.MaxValue;
+
+        var result = Invoke(engine, caller, "routerCall_AddLiquidity",
+            router, tokenA, tokenB, amountADesired, amountBDesired, 0, 0, deadline);
+        Assert.NotNull(result);
+
+        var arr = result as Neo.VM.Types.Array;
+        Assert.NotNull(arr);
+        Assert.Equal(3, arr.Count);
+
+        // Caller should have received LP tokens from the pair
+        BigInteger lpBalance = Invoke(engine, pair, "balanceOf", caller).GetInteger();
+        Assert.True(lpBalance > 0, "Caller should hold LP tokens");
+
+        // Caller's token balances should have decreased by approximately the deposited amounts
+        BigInteger tokenAAfter = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBAfter = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+        Assert.True(tokenAAfter < tokenABefore, "TokenA should be spent");
+        Assert.True(tokenBAfter < tokenBBefore, "TokenB should be spent");
+        Console.WriteLine("   contract-caller AddLiquidity: LP=" + lpBalance + " ✓");
+    }
+
+    [Fact]
+    public void Router_ContractCaller_RemoveLiquidity()
+    {
+        var (engine, factory, router, caller, pair, tokenA, tokenB) = DeployCaller();
+
+        BigInteger fundAmount = 20_000_000_000_00;
+        Invoke(engine, tokenA, "transfer", Owner, caller, fundAmount, null);
+        Invoke(engine, tokenB, "transfer", Owner, caller, fundAmount, null);
+
+        BigInteger amountADesired = 10_000_000_000_00;
+        BigInteger amountBDesired = 10_000_000_000_00;
+        BigInteger deadline = long.MaxValue;
+
+        // First add liquidity to get LP tokens
+        var addResult = Invoke(engine, caller, "routerCall_AddLiquidity",
+            router, tokenA, tokenB, amountADesired, amountBDesired, 0, 0, deadline);
+
+        BigInteger lpBalance = Invoke(engine, pair, "balanceOf", caller).GetInteger();
+        Assert.True(lpBalance > 0, "Caller should hold LP before remove");
+
+        BigInteger tokenABefore = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBBefore = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+
+        // Now remove liquidity via contract-caller overload
+        var removeResult = Invoke(engine, caller, "routerCall_RemoveLiquidity",
+            router, tokenA, tokenB, lpBalance, 0, 0, deadline);
+        Assert.NotNull(removeResult);
+
+        BigInteger lpAfter = Invoke(engine, pair, "balanceOf", caller).GetInteger();
+        Assert.True(lpAfter < lpBalance, "LP should decrease after removal");
+
+        BigInteger tokenAAfter = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBAfter = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+        Assert.True(tokenAAfter > tokenABefore, "TokenA should be returned");
+        Assert.True(tokenBAfter > tokenBBefore, "TokenB should be returned");
+        Console.WriteLine("   contract-caller RemoveLiquidity: ΔA=" + (tokenAAfter - tokenABefore) + " ΔB=" + (tokenBAfter - tokenBBefore) + " ✓");
+    }
+
+    [Fact]
+    public void Router_ContractCaller_SwapExactTokensForTokens()
+    {
+        var (engine, factory, router, caller, pair, tokenA, tokenB) = DeployCaller();
+
+        BigInteger fundAmount = 20_000_000_000_00;
+        Invoke(engine, tokenA, "transfer", Owner, caller, fundAmount, null);
+
+        // Also fund the pair (via explicit addLiquidity) so it has reserves for the swap
+        Invoke(engine, tokenA, "transfer", Owner, pair, 10_000_000_000_00, null);
+        Invoke(engine, tokenB, "transfer", Owner, pair, 10_000_000_000_00, null);
+
+        BigInteger deadline = long.MaxValue;
+        BigInteger swapAmount = 1_000_000_00;
+
+        BigInteger tokenBBefore = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+
+        var path = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = new ContractParameter[]
+            {
+                new(ContractParameterType.Hash160) { Value = tokenA },
+                new(ContractParameterType.Hash160) { Value = tokenB },
+            }
+        };
+
+        var result = Invoke(engine, caller, "routerCall_SwapExactTokensForTokens",
+            router, swapAmount, BigInteger.Zero, path, deadline);
+
+        Assert.NotNull(result);
+        Assert.True((result as Neo.VM.Types.Boolean)?.GetBoolean() ?? false, "Swap should succeed");
+
+        BigInteger tokenAAfter = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBAfter = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+        Assert.True(tokenAAfter < fundAmount, "TokenA should be spent");
+        Assert.True(tokenBAfter > tokenBBefore, "TokenB should be received");
+        Console.WriteLine("   contract-caller SwapExactTokensForTokens: ΔB=" + (tokenBAfter - tokenBBefore) + " ✓");
+    }
+
+    [Fact]
+    public void Router_ContractCaller_SwapTokensForExactTokens()
+    {
+        var (engine, factory, router, caller, pair, tokenA, tokenB) = DeployCaller();
+
+        BigInteger fundAmount = 20_000_000_000_00;
+        Invoke(engine, tokenA, "transfer", Owner, caller, fundAmount, null);
+        Invoke(engine, tokenA, "transfer", Owner, pair, 10_000_000_000_00, null);
+        Invoke(engine, tokenB, "transfer", Owner, pair, 10_000_000_000_00, null);
+
+        BigInteger deadline = long.MaxValue;
+        BigInteger exactAmountOut = 500_000_00;
+        BigInteger amountInMax = 2_000_000_00;
+
+        BigInteger tokenBBefore = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+
+        var path = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = new ContractParameter[]
+            {
+                new(ContractParameterType.Hash160) { Value = tokenA },
+                new(ContractParameterType.Hash160) { Value = tokenB },
+            }
+        };
+
+        var result = Invoke(engine, caller, "routerCall_SwapTokensForExactTokens",
+            router, amountInMax, exactAmountOut, path, deadline);
+
+        Assert.NotNull(result);
+        Assert.True((result as Neo.VM.Types.Boolean)?.GetBoolean() ?? false, "Swap should succeed");
+
+        BigInteger tokenAAfter = Invoke(engine, tokenA, "balanceOf", caller).GetInteger();
+        BigInteger tokenBAfter = Invoke(engine, tokenB, "balanceOf", caller).GetInteger();
+        Assert.True(tokenAAfter < fundAmount, "TokenA should be spent");
+        Assert.True(tokenBAfter >= tokenBBefore + exactAmountOut, "TokenB should be received");
+        Console.WriteLine("   contract-caller SwapTokensForExactTokens: ΔB=" + (tokenBAfter - tokenBBefore) + " ✓");
+    }
+
     private static (TestEngine engine, UInt160 factoryHash, UInt160 routerHash, UInt160 pairHash, UInt160 tokenA, UInt160 tokenB) Setup()
     {
         var engine = CreateEngine();
