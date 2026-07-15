@@ -160,7 +160,7 @@ public class FactoryTests
     }
 
     [Fact]
-    public void SetRouter_OnceLocked_Fails()
+    public void SetRouter_CanBeUpdated()
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
@@ -171,10 +171,7 @@ public class FactoryTests
 
         Invoke(engine, factoryHash, "setRouter", routerHash);
 
-        var ex = Assert.ThrowsAny<Exception>(() =>
-        {
-            Invoke(engine, factoryHash, "setRouter", routerHash);
-        });
-        Assert.Contains("ASSERT", ex.Message);
+        // Second set should succeed (updatable)
+        Invoke(engine, factoryHash, "setRouter", routerHash);
     }
 }

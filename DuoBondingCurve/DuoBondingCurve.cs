@@ -46,7 +46,7 @@ namespace DuoBondingCurve
             Assert(name.Length > 0 && name.Length <= 64, "INVALID_NAME");
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
             Assert(targetRaise > 0, "INVALID_TARGET");
-            Assert(graduationBps > 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
+            Assert(graduationBps >= 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
             Assert(team == null || team.Length <= 64, "INVALID_TEAM_TOO_LONG");
             Assert(contact == null || contact.Length <= 128, "INVALID_CONTACT_TOO_LONG");
             Assert(description == null || description.Length <= 256, "INVALID_DESCRIPTION_TOO_LONG");
@@ -145,9 +145,9 @@ namespace DuoBondingCurve
             string symbol = (string)data[2];
             BigInteger targetRaise = (BigInteger)data[3];
             BigInteger graduationBps = (BigInteger)data[4];
-            string team = data[5] as string;
-            string contact = data[6] as string;
-            string description = data[7] as string;
+            string team = (string)data[5];
+            string contact = (string)data[6];
+            string description = (string)data[7];
             BigInteger minTokensOut = 0;
             if (data[8] != null)
                 minTokensOut = (BigInteger)data[8];

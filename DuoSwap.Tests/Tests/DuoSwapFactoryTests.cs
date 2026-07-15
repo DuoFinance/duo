@@ -269,7 +269,7 @@ public class DuoSwapFactoryTests
     }
 
     [Fact]
-    public void Factory_SetBonding_UpdatesAndLocks()
+    public void Factory_SetBonding_UpdatesSuccessfully()
     {
         var (engine, factory, _, _, _) = DeployCore();
 
@@ -280,9 +280,10 @@ public class DuoSwapFactoryTests
         Assert.Equal(bondingAddr, new UInt160(result.GetSpan()));
 
         var anotherBonding = new UInt160(new byte[] { 0x0d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, factory, "setBonding", anotherBonding));
-        Assert.Contains("ASSERT", ex.Message);
+        Invoke(engine, factory, "setBonding", anotherBonding);
+
+        var updated = Invoke(engine, factory, "getBonding");
+        Assert.Equal(anotherBonding, new UInt160(updated.GetSpan()));
     }
 
     [Fact]

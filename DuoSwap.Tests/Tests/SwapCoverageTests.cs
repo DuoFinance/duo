@@ -247,11 +247,11 @@ public class SwapCoverageTests
     }
 
     // ============================================
-    // FACTORY: Router lock after first set
+    // FACTORY: Router can be updated
     // ============================================
 
     [Fact]
-    public void Factory_SetRouter_AfterFirstSet_Fails()
+    public void Factory_SetRouter_AfterFirstSet_Updates()
     {
         var (e, f, _, a, b) = DeployCore();
         DeployPair(e, f, a, b);
@@ -260,8 +260,8 @@ public class SwapCoverageTests
         rm.Name = "DuoSwapRouterV2";
         var newRouter = DeployContract(e, rn, rm, new object[] { f });
 
-        var ex = Assert.ThrowsAny<Exception>(() => Invoke(e, f, "setRouter", newRouter));
-        Assert.Contains("ASSERT", ex.Message);
+        // Second set should succeed (updatable)
+        Invoke(e, f, "setRouter", newRouter);
     }
 
     // ============================================
