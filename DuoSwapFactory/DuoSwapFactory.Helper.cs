@@ -15,6 +15,7 @@ namespace DuoSwapFactory
         private const string FEETO_KEY = "FeeTo";
         private const string ROUTER_KEY = "Router";
         private const string BONDING_KEY = "Bonding";
+        private const string GOVERNANCE_KEY = "GovernanceToken";
         private static readonly byte[] PAIR_PREFIX = new byte[] { 0x01 };
         #endregion
 
@@ -130,6 +131,23 @@ namespace DuoSwapFactory
         }
         #endregion
 
+        #region Governance
+        [Safe]
+        public static UInt160 GetGovernanceToken()
+        {
+            var governance = StorageGet(GOVERNANCE_KEY);
+            return governance?.Length == 20 ? (UInt160)governance : UInt160.Zero;
+        }
+
+        public static void SetGovernanceToken(UInt160 tokenHash)
+        {
+            Assert(Runtime.CheckWitness(GetSetter()), "ONLY_SETTER");
+            Assert(GetGovernanceToken().IsZero, "ALREADY_SET_IMMUTABLE");
+            StoragePut(GOVERNANCE_KEY, tokenHash);
+            onGovernanceTokenSet(tokenHash);
+        }
+        #endregion
+
         #region Events
         [DisplayName("StorePair")]
         public static event StorePairEvent onStorePair;
@@ -142,6 +160,10 @@ namespace DuoSwapFactory
         [DisplayName("SetBonding")]
         public static event SetBondingEvent onSetBonding;
         public delegate void SetBondingEvent(UInt160 bonding);
+
+        [DisplayName("SetGovernanceToken")]
+        public static event SetGovernanceTokenEvent onGovernanceTokenSet;
+        public delegate void SetGovernanceTokenEvent(UInt160 tokenHash);
 
         [DisplayName("OwnershipTransferred")]
         public static event OnOwnershipTransferredEvent onOwnershipTransferred;

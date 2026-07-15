@@ -300,4 +300,55 @@ public class DuoSwapFactoryTests
             Invoke(engine, factoryHash, "setBonding", bondingAddr));
         Assert.Contains("ASSERT", ex.Message);
     }
+
+    [Fact]
+    public void Factory_GetGovernanceToken_ReturnsZeroInitially()
+    {
+        var (engine, factory, _, _, _) = DeployCore();
+
+        var result = Invoke(engine, factory, "getGovernanceToken");
+        var governance = result.GetSpan();
+        Assert.True(governance.Length == 0 || new UInt160(governance) == UInt160.Zero);
+    }
+
+    [Fact]
+    public void Factory_SetGovernanceToken_UpdatesSuccessfully()
+    {
+        var (engine, factory, _, _, _) = DeployCore();
+
+        var govAddr = new UInt160(new byte[] { 0x0c, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        Invoke(engine, factory, "setGovernanceToken", govAddr);
+
+        var result = Invoke(engine, factory, "getGovernanceToken");
+        Assert.Equal(govAddr, new UInt160(result.GetSpan()));
+    }
+
+    [Fact]
+    public void Factory_SetGovernanceToken_NonSetterCaller_Fails()
+    {
+        var engine = CreateEngine();
+        var (fn, fm) = LoadContract("DuoSwapFactory");
+        var factoryHash = DeployContract(engine, fn, fm, Owner);
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
+
+        var govAddr = new UInt160(new byte[] { 0x0d, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, factoryHash, "setGovernanceToken", govAddr));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Factory_SetGovernanceToken_CannotSetTwice()
+    {
+        var (engine, factory, _, _, _) = DeployCore();
+
+        var govAddr = new UInt160(new byte[] { 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        Invoke(engine, factory, "setGovernanceToken", govAddr);
+
+        var anotherGov = new UInt160(new byte[] { 0x0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            Invoke(engine, factory, "setGovernanceToken", anotherGov));
+        Assert.Contains("ASSERT", ex.Message);
+    }
 }

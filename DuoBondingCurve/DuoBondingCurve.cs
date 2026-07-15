@@ -8,7 +8,18 @@ namespace DuoBondingCurve
 {
     [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "transfer", "symbol", "totalSupply", "initialise", "getDeployFee", "getPairHash", "addLiquidity", "getReserves", "mint", "getReserve0", "getReserve1" })]
+    [ContractPermission("*", new[] { 
+        "transfer", 
+        "symbol", 
+        "totalSupply", 
+        "initialise", 
+        "getDeployFee", 
+        "getPairHash", 
+        "addLiquidity", 
+        "getReserves", 
+        "mint", 
+        "getReserve0", 
+        "getReserve1" })]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation
