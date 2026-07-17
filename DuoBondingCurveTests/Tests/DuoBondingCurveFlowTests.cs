@@ -126,9 +126,7 @@ public class DuoBondingCurveFlowTests
 
         BigInteger GetPrice()
         {
-            var reserves = Invoke(engine, bondingCurve, "getVirtualReserves", tokenHash);
-            var arr = (Neo.VM.Types.Array)reserves;
-            return arr[0].GetInteger() * 100_000_000 / arr[1].GetInteger();
+            return Invoke(engine, bondingCurve, "getCurrentPrice", tokenHash).GetInteger();
         }
 
         BigInteger previousPrice = GetPrice();

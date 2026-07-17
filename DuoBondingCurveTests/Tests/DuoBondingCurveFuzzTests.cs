@@ -9,7 +9,6 @@ using Neo.SmartContract.Testing;
 using Neo.SmartContract.Testing.Exceptions;
 using Neo.VM;
 using Neo.VM.Types;
-using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 
 namespace DuoBondingCurveTests;
@@ -64,16 +63,9 @@ public class DuoBondingCurveFuzzTests
         return Invoke(engine, bondingCurve, "getSellAmount", tokenHash, tokens).GetInteger();
     }
 
-    private static BigInteger GetVirtualGas(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
+    private static BigInteger GetPrice(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
     {
-        var arr = (Array)Invoke(engine, bondingCurve, "getVirtualReserves", tokenHash);
-        return arr[0].GetInteger();
-    }
-
-    private static BigInteger GetVirtualToken(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
-    {
-        var arr = (Array)Invoke(engine, bondingCurve, "getVirtualReserves", tokenHash);
-        return arr[1].GetInteger();
+        return Invoke(engine, bondingCurve, "getCurrentPrice", tokenHash).GetInteger();
     }
 
     private static BigInteger ComputeVToken(BigInteger totalSupply, BigInteger graduationBps)
@@ -196,15 +188,9 @@ public class DuoBondingCurveFuzzTests
             var tokenHash = SetupRandomSale(engine, bondingCurve,
                 totalSupply, 8, "P" + symbolNum, targetRaise, graduationBps);
 
-            var vGas = GetVirtualGas(engine, bondingCurve, tokenHash);
-            var vToken = GetVirtualToken(engine, bondingCurve, tokenHash);
+            var price = GetPrice(engine, bondingCurve, tokenHash);
 
-            Assert.True(vToken > 0, $"iter {i}: vToken={vToken} (<=0)");
-            Assert.True(vGas >= 0, $"iter {i}: vGas={vGas} (<0)");
-
-            BigInteger maxTokens = totalSupply * graduationBps / 10000;
-            Assert.True(vToken > maxTokens,
-                $"iter {i}: vToken={vToken} <= maxTokens={maxTokens}");
+            Assert.True(price > 0, $"iter {i}: price={price} (<=0)");
         }
     }
 

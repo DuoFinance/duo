@@ -88,14 +88,14 @@ namespace DuoBondingCurve
         }
 
         [Safe]
-        public static BigInteger[] GetVirtualReserves(UInt160 tokenHash)
+        public static BigInteger GetCurrentPrice(UInt160 tokenHash)
         {
             var sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             Assert(tokenReserve > 0, "NO_TOKENS_LEFT");
-            return new BigInteger[] { gasReserve, tokenReserve };
+            return gasReserve * 100000000 / tokenReserve;
         }
 
         [Safe]
