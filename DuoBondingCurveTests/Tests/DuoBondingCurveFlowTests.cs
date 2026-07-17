@@ -204,15 +204,13 @@ public class DuoBondingCurveFlowTests
         var map = new Map();
         map[(BigInteger)0] = (Neo.VM.Types.ByteString)tokenHash.GetSpan().ToArray();
         map[(BigInteger)1] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
-        map[(BigInteger)2] = (Neo.VM.Types.ByteString)Encoding.UTF8.GetBytes(symbol);
-        map[(BigInteger)3] = new Integer(totalSupply);
-        map[(BigInteger)4] = new Integer(BigInteger.Zero);
-        map[(BigInteger)5] = new Integer(BigInteger.Zero);
-        map[(BigInteger)6] = new Integer(targetRaise);
-        map[(BigInteger)7] = new Integer(vGas);
-        map[(BigInteger)8] = new Integer(vToken);
-        map[(BigInteger)9] = new Integer(graduationBps);
-        map[(BigInteger)10] = Neo.VM.Types.Boolean.False;
+        map[(BigInteger)2] = new Integer(BigInteger.Zero);
+        map[(BigInteger)3] = new Integer(BigInteger.Zero);
+        map[(BigInteger)4] = new Integer(targetRaise);
+        map[(BigInteger)5] = new Integer(vGas);
+        map[(BigInteger)6] = new Integer(vToken);
+        map[(BigInteger)7] = new Integer(graduationBps);
+        map[(BigInteger)8] = Neo.VM.Types.Boolean.False;
 
         byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
 
@@ -267,14 +265,13 @@ public class DuoBondingCurveFlowTests
         return new SaleInfo
         {
             TokenHash = tokenHash,
-            TotalSupply = map[(BigInteger)3].GetInteger(),
-            TokensSold = map[(BigInteger)4].GetInteger(),
-            GASRaised = map[(BigInteger)5].GetInteger(),
-            TargetRaise = map[(BigInteger)6].GetInteger(),
-            VirtualGas = map[(BigInteger)7].GetInteger(),
-            VirtualToken = map[(BigInteger)8].GetInteger(),
-            GraduationBps = map[(BigInteger)9].GetInteger(),
-            Graduated = map[(BigInteger)10].GetBoolean()
+            TokensSold = map[(BigInteger)2].GetInteger(),
+            GASRaised = map[(BigInteger)3].GetInteger(),
+            TargetRaise = map[(BigInteger)4].GetInteger(),
+            VirtualGas = map[(BigInteger)5].GetInteger(),
+            VirtualToken = map[(BigInteger)6].GetInteger(),
+            GraduationBps = map[(BigInteger)7].GetInteger(),
+            Graduated = map[(BigInteger)8].GetBoolean()
         };
     }
 
@@ -300,7 +297,6 @@ public class DuoBondingCurveFlowTests
     private struct SaleInfo
     {
         public UInt160 TokenHash;
-        public BigInteger TotalSupply;
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;

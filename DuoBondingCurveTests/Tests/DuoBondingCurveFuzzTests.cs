@@ -29,7 +29,6 @@ public class DuoBondingCurveFuzzTests
 
     private struct VmSaleInfo
     {
-        public BigInteger TotalSupply;
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;
@@ -45,14 +44,13 @@ public class DuoBondingCurveFuzzTests
         var map = (Map)result;
         return new VmSaleInfo
         {
-            TotalSupply = map[(BigInteger)3].GetInteger(),
-            TokensSold = map[(BigInteger)4].GetInteger(),
-            GASRaised = map[(BigInteger)5].GetInteger(),
-            TargetRaise = map[(BigInteger)6].GetInteger(),
-            VirtualGas = map[(BigInteger)7].GetInteger(),
-            VirtualToken = map[(BigInteger)8].GetInteger(),
-            GraduationBps = map[(BigInteger)9].GetInteger(),
-            Graduated = map[(BigInteger)10].GetBoolean(),
+            TokensSold = map[(BigInteger)2].GetInteger(),
+            GASRaised = map[(BigInteger)3].GetInteger(),
+            TargetRaise = map[(BigInteger)4].GetInteger(),
+            VirtualGas = map[(BigInteger)5].GetInteger(),
+            VirtualToken = map[(BigInteger)6].GetInteger(),
+            GraduationBps = map[(BigInteger)7].GetInteger(),
+            Graduated = map[(BigInteger)8].GetBoolean(),
         };
     }
 
@@ -114,15 +112,13 @@ public class DuoBondingCurveFuzzTests
         var map = new Map();
         map[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
         map[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
-        map[(BigInteger)2] = (ByteString)Encoding.UTF8.GetBytes(symbol);
-        map[(BigInteger)3] = new Integer(totalSupply);
-        map[(BigInteger)4] = new Integer(BigInteger.Zero);
-        map[(BigInteger)5] = new Integer(BigInteger.Zero);
-        map[(BigInteger)6] = new Integer(targetRaise);
-        map[(BigInteger)7] = new Integer(vGas);
-        map[(BigInteger)8] = new Integer(vToken);
-        map[(BigInteger)9] = new Integer(graduationBps);
-        map[(BigInteger)10] = Boolean.False;
+        map[(BigInteger)2] = new Integer(BigInteger.Zero);
+        map[(BigInteger)3] = new Integer(BigInteger.Zero);
+        map[(BigInteger)4] = new Integer(targetRaise);
+        map[(BigInteger)5] = new Integer(vGas);
+        map[(BigInteger)6] = new Integer(vToken);
+        map[(BigInteger)7] = new Integer(graduationBps);
+        map[(BigInteger)8] = Boolean.False;
 
         byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
         byte[] keyBytes = new byte[24];
@@ -258,7 +254,7 @@ public class DuoBondingCurveFuzzTests
 
             Assert.True(tokensOut >= 0, $"iter {i}: tokensOut={tokensOut} (<0)");
 
-            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
+            BigInteger maxTokens = 100000000000000000 * sale.GraduationBps / 10000;
             Assert.True(tokensOut <= maxTokens,
                 $"iter {i}: tokensOut={tokensOut} > maxTokens={maxTokens}");
         }
@@ -350,7 +346,7 @@ public class DuoBondingCurveFuzzTests
                 long gasAmount = rng.NextInt64(1_000_000, Math.Max(1_000_001, targetRaise / 10));
                 BigInteger tokens = GetBuyAmount(engine, bondingCurve, tokenHash, gasAmount);
 
-                BigInteger maxTokens = current.TotalSupply * current.GraduationBps / 10000;
+                BigInteger maxTokens = current.GraduationBps * 100000000000000000 / 10000;
                 BigInteger remaining = maxTokens - current.TokensSold;
                 BigInteger actualGas = gasAmount;
 
@@ -371,15 +367,13 @@ public class DuoBondingCurveFuzzTests
                 var map = new Map();
                 map[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
                 map[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
-                map[(BigInteger)2] = (ByteString)Encoding.UTF8.GetBytes("K" + symbolNum);
-                map[(BigInteger)3] = new Integer(current.TotalSupply);
-                map[(BigInteger)4] = new Integer(current.TokensSold);
-                map[(BigInteger)5] = new Integer(current.GASRaised);
-                map[(BigInteger)6] = new Integer(current.TargetRaise);
-                map[(BigInteger)7] = new Integer(current.VirtualGas);
-                map[(BigInteger)8] = new Integer(current.VirtualToken);
-                map[(BigInteger)9] = new Integer(current.GraduationBps);
-                map[(BigInteger)10] = Boolean.False;
+                map[(BigInteger)2] = new Integer(current.TokensSold);
+                map[(BigInteger)3] = new Integer(current.GASRaised);
+                map[(BigInteger)4] = new Integer(current.TargetRaise);
+                map[(BigInteger)5] = new Integer(current.VirtualGas);
+                map[(BigInteger)6] = new Integer(current.VirtualToken);
+                map[(BigInteger)7] = new Integer(current.GraduationBps);
+                map[(BigInteger)8] = Boolean.False;
 
                 byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
                 WriteSaleStorage(engine, bcId, tokenHash, serializedSale);
@@ -445,7 +439,7 @@ public class DuoBondingCurveFuzzTests
             }
             catch { continue; }
 
-            BigInteger buyAmount = BigInteger.Min(tokensOut, sale.TotalSupply * sale.GraduationBps / 10000);
+            BigInteger buyAmount = BigInteger.Min(tokensOut, 100000000000000000 * sale.GraduationBps / 10000);
             if (buyAmount <= 0) continue;
 
             sale.TokensSold = buyAmount;
@@ -454,15 +448,13 @@ public class DuoBondingCurveFuzzTests
             var writeMap = new Map();
             writeMap[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
             writeMap[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
-            writeMap[(BigInteger)2] = (ByteString)Encoding.UTF8.GetBytes("S" + symbolNum);
-            writeMap[(BigInteger)3] = new Integer(sale.TotalSupply);
-            writeMap[(BigInteger)4] = new Integer(sale.TokensSold);
-            writeMap[(BigInteger)5] = new Integer(sale.GASRaised);
-            writeMap[(BigInteger)6] = new Integer(sale.TargetRaise);
-            writeMap[(BigInteger)7] = new Integer(sale.VirtualGas);
-            writeMap[(BigInteger)8] = new Integer(sale.VirtualToken);
-            writeMap[(BigInteger)9] = new Integer(sale.GraduationBps);
-            writeMap[(BigInteger)10] = Boolean.False;
+            writeMap[(BigInteger)2] = new Integer(sale.TokensSold);
+            writeMap[(BigInteger)3] = new Integer(sale.GASRaised);
+            writeMap[(BigInteger)4] = new Integer(sale.TargetRaise);
+            writeMap[(BigInteger)5] = new Integer(sale.VirtualGas);
+            writeMap[(BigInteger)6] = new Integer(sale.VirtualToken);
+            writeMap[(BigInteger)7] = new Integer(sale.GraduationBps);
+            writeMap[(BigInteger)8] = Boolean.False;
 
             byte[] serializedSale = BinarySerializer.Serialize(writeMap, new ExecutionEngineLimits());
             WriteSaleStorage(engine, bcId, tokenHash, serializedSale);
@@ -522,7 +514,7 @@ public class DuoBondingCurveFuzzTests
             BigInteger tokensOut = tokenReserve - newTokenReserve;
             if (tokensOut <= 0) continue;
 
-            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
+            BigInteger maxTokens = 100000000000000000 * sale.GraduationBps / 10000;
             if (tokensOut > maxTokens) tokensOut = maxTokens;
             if (tokensOut <= 0) continue;
 
@@ -535,15 +527,13 @@ public class DuoBondingCurveFuzzTests
             var buyMap = new Map();
             buyMap[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
             buyMap[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
-            buyMap[(BigInteger)2] = (ByteString)Encoding.UTF8.GetBytes("R" + symbolNum);
-            buyMap[(BigInteger)3] = new Integer(sale.TotalSupply);
-            buyMap[(BigInteger)4] = new Integer(sale.TokensSold);
-            buyMap[(BigInteger)5] = new Integer(sale.GASRaised);
-            buyMap[(BigInteger)6] = new Integer(sale.TargetRaise);
-            buyMap[(BigInteger)7] = new Integer(sale.VirtualGas);
-            buyMap[(BigInteger)8] = new Integer(sale.VirtualToken);
-            buyMap[(BigInteger)9] = new Integer(sale.GraduationBps);
-            buyMap[(BigInteger)10] = Boolean.False;
+            buyMap[(BigInteger)2] = new Integer(sale.TokensSold);
+            buyMap[(BigInteger)3] = new Integer(sale.GASRaised);
+            buyMap[(BigInteger)4] = new Integer(sale.TargetRaise);
+            buyMap[(BigInteger)5] = new Integer(sale.VirtualGas);
+            buyMap[(BigInteger)6] = new Integer(sale.VirtualToken);
+            buyMap[(BigInteger)7] = new Integer(sale.GraduationBps);
+            buyMap[(BigInteger)8] = Boolean.False;
 
             byte[] serializedSale = BinarySerializer.Serialize(buyMap, new ExecutionEngineLimits());
             WriteSaleStorage(engine, bcId, tokenHash, serializedSale);

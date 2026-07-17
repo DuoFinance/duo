@@ -158,7 +158,7 @@ namespace DuoBondingCurve
             BigInteger tokensOut = tokenReserve - newTokenReserve;
 
             // Cap at graduation point: P * TotalSupply
-            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
+            BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
             BigInteger remaining = maxTokens - sale.TokensSold;
             return tokensOut > remaining ? remaining : tokensOut;
         }
@@ -366,8 +366,6 @@ namespace DuoBondingCurve
     {
         public UInt160 TokenHash;
         public UInt160 Creator;
-        public string Symbol;
-        public BigInteger TotalSupply;
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;

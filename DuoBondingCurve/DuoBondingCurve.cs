@@ -90,8 +90,6 @@ namespace DuoBondingCurve
             {
                 TokenHash = tokenHash,
                 Creator = creator,
-                Symbol = symbol,
-                TotalSupply = totalSupply,
                 TokensSold = 0,
                 GASRaised = 0,
                 TargetRaise = targetRaise,
@@ -188,7 +186,7 @@ namespace DuoBondingCurve
             BigInteger tokens = GetAmountOut(sale, gasAmount);
             Assert(tokens > 0, "ZERO_TOKENS");
 
-            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
+            BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
             BigInteger remainingToGrad = maxTokens - sale.TokensSold;
             BigInteger actualGas = gasAmount;
             if (tokens >= remainingToGrad)
@@ -272,7 +270,7 @@ namespace DuoBondingCurve
             UInt160 self = Runtime.ExecutingScriptHash;
 
             BigInteger raisedGAS = sale.GASRaised;
-            BigInteger remainingTokens = sale.TotalSupply - sale.TokensSold;
+            BigInteger remainingTokens = DEFAULT_TOTAL_SUPPLY - sale.TokensSold;
             Assert(remainingTokens > 0, "NO_TOKENS_FOR_LP");
 
             UInt160 pair = (UInt160)Contract.Call(
@@ -310,7 +308,7 @@ namespace DuoBondingCurve
 
                     sale.Graduated = true;
                     StoreSale(tokenHash, sale);
-                    OnSaleCompleted(tokenHash, sale.Symbol, pair, mintedLiquidity, remainingTokens, raisedGAS);
+                    OnSaleCompleted(tokenHash, (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly), pair, mintedLiquidity, remainingTokens, raisedGAS);
                     return;
                 }
             }
@@ -378,7 +376,7 @@ namespace DuoBondingCurve
             sale.Graduated = true;
             StoreSale(tokenHash, sale);
 
-            OnSaleCompleted(tokenHash, sale.Symbol, pair, liquidity, remainingTokens, gasForLiquidity);
+            OnSaleCompleted(tokenHash, (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly), pair, liquidity, remainingTokens, gasForLiquidity);
         }
         #endregion
 

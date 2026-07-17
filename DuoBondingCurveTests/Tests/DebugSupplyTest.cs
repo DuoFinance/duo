@@ -53,15 +53,13 @@ public class DebugSupplyTest
         var map = new Map();
         map[(BigInteger)0] = (Neo.VM.Types.ByteString)tokenHash.GetSpan().ToArray();
         map[(BigInteger)1] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
-        map[(BigInteger)2] = (Neo.VM.Types.ByteString)Encoding.UTF8.GetBytes(symbol);
-        map[(BigInteger)3] = new Integer(rawSupply);
-        map[(BigInteger)4] = new Integer(BigInteger.Zero);
-        map[(BigInteger)5] = new Integer(BigInteger.Zero);
-        map[(BigInteger)6] = new Integer(targetRaise);
-        map[(BigInteger)7] = new Integer(vGas);
-        map[(BigInteger)8] = new Integer(vToken);
-        map[(BigInteger)9] = new Integer(graduationBps);
-        map[(BigInteger)10] = Neo.VM.Types.Boolean.False;
+        map[(BigInteger)2] = new Integer(BigInteger.Zero);
+        map[(BigInteger)3] = new Integer(BigInteger.Zero);
+        map[(BigInteger)4] = new Integer(targetRaise);
+        map[(BigInteger)5] = new Integer(vGas);
+        map[(BigInteger)6] = new Integer(vToken);
+        map[(BigInteger)7] = new Integer(graduationBps);
+        map[(BigInteger)8] = Neo.VM.Types.Boolean.False;
 
         byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
 
@@ -76,14 +74,13 @@ public class DebugSupplyTest
         var result = Invoke(engine, bondingCurve, "getSaleInfo", tokenHash);
         var resultMap = (Neo.VM.Types.Map)result;
 
-        Assert.Equal(rawSupply, resultMap[(BigInteger)3].GetInteger());
-        Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)4].GetInteger());
-        Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)5].GetInteger());
-        Assert.Equal(targetRaise, resultMap[(BigInteger)6].GetInteger());
-        Assert.Equal(vGas, resultMap[(BigInteger)7].GetInteger());
-        Assert.Equal(vToken, resultMap[(BigInteger)8].GetInteger());
-        Assert.Equal(graduationBps, resultMap[(BigInteger)9].GetInteger());
-        Assert.False(resultMap[(BigInteger)10].GetBoolean());
+        Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)2].GetInteger());
+        Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)3].GetInteger());
+        Assert.Equal(targetRaise, resultMap[(BigInteger)4].GetInteger());
+        Assert.Equal(vGas, resultMap[(BigInteger)5].GetInteger());
+        Assert.Equal(vToken, resultMap[(BigInteger)6].GetInteger());
+        Assert.Equal(graduationBps, resultMap[(BigInteger)7].GetInteger());
+        Assert.False(resultMap[(BigInteger)8].GetBoolean());
 
         var buyResult = Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, (BigInteger)10_000_000_000);
         Assert.True(buyResult.GetInteger() > 0);
