@@ -64,14 +64,14 @@ namespace DuoBondingCurve
 
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
-            Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
-            Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
+            // Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
+            // Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
 
             var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
             Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
             BigInteger twoPminusOne = 2 * graduationBps - 10000;
-            Assert(twoPminusOne > 0, "INVALID_GRADUATION");
+            // Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
             string manifest = BuildImmutableTokenManifest(name, project, repoUrl, description);
@@ -238,11 +238,11 @@ namespace DuoBondingCurve
             SaleInfo sale = GetSale(tokenHash);
 
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
-            Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
+            //Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
 
             BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
-            Assert(gasReturn > 0, "ZERO_GAS");
-            Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
+            // Assert(gasReturn > 0, "ZERO_GAS");
+            // Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
 
             Assert(gasReturn >= minGasOut, "SLIPPAGE_EXCEEDED");
 
@@ -308,7 +308,7 @@ namespace DuoBondingCurve
 
                     sale.Graduated = true;
                     StoreSale(tokenHash, sale);
-                    OnSaleCompleted(tokenHash, (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly), pair, mintedLiquidity, remainingTokens, raisedGAS);
+                    OnSaleCompleted(tokenHash, pair, mintedLiquidity, remainingTokens, raisedGAS);
                     return;
                 }
             }
@@ -376,7 +376,7 @@ namespace DuoBondingCurve
             sale.Graduated = true;
             StoreSale(tokenHash, sale);
 
-            OnSaleCompleted(tokenHash, (string)Contract.Call(tokenHash, "symbol", CallFlags.ReadOnly), pair, liquidity, remainingTokens, gasForLiquidity);
+            OnSaleCompleted(tokenHash, pair, liquidity, remainingTokens, gasForLiquidity);
         }
         #endregion
 

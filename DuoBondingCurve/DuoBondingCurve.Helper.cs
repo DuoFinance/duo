@@ -353,7 +353,7 @@ namespace DuoBondingCurve
 
         [DisplayName("SaleCompleted")]
         public static event SaleCompletedEvent OnSaleCompleted;
-        public delegate void SaleCompletedEvent(UInt160 tokenHash, string symbol, UInt160 pairHash, BigInteger liquidityAdded, BigInteger tokensInLiquidity, BigInteger gasInLiquidity);
+        public delegate void SaleCompletedEvent(UInt160 tokenHash, UInt160 pairHash, BigInteger liquidityAdded, BigInteger tokensInLiquidity, BigInteger gasInLiquidity);
 
         [DisplayName("Fault")]
         public static event FaultEvent onFault;
