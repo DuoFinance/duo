@@ -1,6 +1,8 @@
 using System.Numerics;
 using Xunit;
 using Neo;
+using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Testing;
 
 
@@ -376,6 +378,27 @@ public class DuoBondingCurveUnitTests
         var zeroAddr = UInt160.Zero;
         var exception = Record.Exception(() =>
             DeployContract(_engine, nef, manifest, new object[] { factory, zeroAddr }));
+        Assert.NotNull(exception);
+    }
+
+    [Fact]
+    public void TransferGAS_WithNullData_Faults()
+    {
+        var gas = _engine.Native.GAS.Hash;
+        var exception = Record.Exception(() =>
+            Invoke(_engine, _bondingCurveHash, "onNEP17Payment", Owner, (BigInteger)1000, null));
+        Assert.NotNull(exception);
+    }
+
+    [Fact]
+    public void TransferGAS_WithEmptyArrayData_Faults()
+    {
+        var emptyData = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = System.Array.Empty<ContractParameter>()
+        };
+        var exception = Record.Exception(() =>
+            Invoke(_engine, _bondingCurveHash, "onNEP17Payment", Owner, (BigInteger)1000, emptyData));
         Assert.NotNull(exception);
     }
 

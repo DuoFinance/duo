@@ -118,7 +118,7 @@ namespace DuoBondingCurve
 
             if (caller == GAS.Hash)
             {
-                if (data == null || data.Length == 0) return;
+                Assert(data != null && data.Length > 0, "INVALID_TRANSFER_DATA");
 
                 if (data[0] is string && (string)data[0] == "CreateBuy")
                 {
