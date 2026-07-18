@@ -29,15 +29,16 @@ namespace DuoBondingCurve
             string symbol, 
             BigInteger targetRaise, 
             BigInteger graduationBps,
-            string project,
-            string repoUrl,
-            string description
+            string discord,
+            string x,
+            string telegram,
+            string repoUrl
             )
         {
             Enter();
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
-            CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, project, repoUrl, description, Tx.Sender);
+            CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, discord, x, telegram, repoUrl, Tx.Sender);
             Exit();
         }
 
@@ -48,9 +49,10 @@ namespace DuoBondingCurve
             BigInteger decimals,
             BigInteger targetRaise,
             BigInteger graduationBps,
-            string project,
+            string discord,
+            string x,
+            string telegram,
             string repoUrl,
-            string description,
             UInt160 creator
             )
         {
@@ -58,9 +60,10 @@ namespace DuoBondingCurve
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
             Assert(targetRaise > 0, "INVALID_TARGET");
             Assert(graduationBps >= 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
-            Assert(project == null || project.Length <= 64, "INVALID_PROJECT_TOO_LONG");
-            Assert(repoUrl == null || repoUrl.Length <= 128, "INVALID_REPOURL_TOO_LONG");
-            Assert(description == null || description.Length <= 256, "INVALID_DESCRIPTION_TOO_LONG");
+            Assert(discord == null || discord.Length <= 128, "INVALID_DISCORD_TOO_LONG");
+            Assert(x == null || x.Length <= 128, "INVALID_X_TOO_LONG");
+            Assert(telegram == null || telegram.Length <= 128, "INVALID_TELEGRAM_TOO_LONG");
+            Assert(repoUrl == null || repoUrl.Length <= 256, "INVALID_REPOURL_TOO_LONG");
 
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
@@ -74,7 +77,7 @@ namespace DuoBondingCurve
             // Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
-            string manifest = BuildImmutableTokenManifest(name, project, repoUrl, description);
+            string manifest = BuildImmutableTokenManifest(name, discord, x, telegram, repoUrl);
             Contract newContract = ContractManagement.Deploy(nef.ToByteString(), manifest);
             UInt160 tokenHash = newContract.Hash;
 
@@ -148,23 +151,24 @@ namespace DuoBondingCurve
         {
             Enter();
 
-            Assert(data.Length >= 9, "INVALID_CREATE_DATA");
+            Assert(data.Length >= 10, "INVALID_CREATE_DATA");
 
             string name = (string)data[1];
             string symbol = (string)data[2];
             BigInteger targetRaise = (BigInteger)data[3];
             BigInteger graduationBps = (BigInteger)data[4];
-            string project = (string)data[5];
-            string repoUrl = (string)data[6];
-            string description = (string)data[7];
+            string discord = (string)data[5];
+            string x = (string)data[6];
+            string telegram = (string)data[7];
+            string repoUrl = (string)data[8];
             BigInteger minTokensOut = 0;
-            if (data[8] != null)
-                minTokensOut = (BigInteger)data[8];
+            if (data[9] != null)
+                minTokensOut = (BigInteger)data[9];
 
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
 
-            UInt160 tokenHash = CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, project, repoUrl, description, buyer);
+            UInt160 tokenHash = CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, discord, x, telegram, repoUrl, buyer);
 
             ProcessBuyInternal(buyer, tokenHash, gasAmount, minTokensOut);
 

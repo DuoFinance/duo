@@ -96,7 +96,7 @@ public class DuoBondingCurveUnitTests
             BigInteger graduationBps = 8000;
 
             var exception = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.Null(exception);
         }
 
@@ -109,7 +109,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 8000;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -122,7 +122,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 8000;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -135,7 +135,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 8000;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -148,7 +148,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 4999;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -161,7 +161,7 @@ public class DuoBondingCurveUnitTests
             BigInteger graduationBps = 9901;
 
             var exception = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.NotNull(exception);
         }
 
@@ -173,11 +173,11 @@ public class DuoBondingCurveUnitTests
             BigInteger targetRaise = 10_000_000_000;
 
             var ex5000 = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, (BigInteger)5000, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, (BigInteger)5000, "", "", "", ""));
             Assert.NotNull(ex5000);
 
             var ex8000 = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, (BigInteger)8000, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, (BigInteger)8000, "", "", "", ""));
             Assert.Null(ex8000);
         }
 
@@ -202,7 +202,7 @@ public class DuoBondingCurveUnitTests
             BigInteger graduationBps = 6500;
 
             var exception = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.Null(exception);
         }
 
@@ -215,7 +215,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 6500;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -228,7 +228,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 6500;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -241,7 +241,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 4999;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -254,7 +254,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 5000;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
@@ -267,7 +267,7 @@ public class DuoBondingCurveUnitTests
             BigInteger graduationBps = 8000;
 
             var exception = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.Null(exception);
         }
 
@@ -280,7 +280,7 @@ public class DuoBondingCurveUnitTests
             BigInteger graduationBps = 8001;
 
             var exception = Record.Exception(() =>
-                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.Null(exception);
         }
 
@@ -293,7 +293,7 @@ public class DuoBondingCurveUnitTests
         BigInteger graduationBps = 6500;
 
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", ""));
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
         Assert.NotNull(exception);
     }
 
