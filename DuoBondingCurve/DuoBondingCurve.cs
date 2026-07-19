@@ -123,7 +123,7 @@ namespace DuoBondingCurve
             {
                 Assert(data != null && data.Length > 0, "INVALID_TRANSFER_DATA");
 
-                if (data[0] is string && (string)data[0] == "CreateBuy")
+                if (data[0] is string && (string)data[0] == "CreateAndBuy")
                 {
                     ProcessCreateAndBuy(from, amount, data);
                 }
@@ -153,17 +153,17 @@ namespace DuoBondingCurve
 
             Assert(data.Length >= 10, "INVALID_CREATE_DATA");
 
-            string name = (string)data[1];
-            string symbol = (string)data[2];
-            BigInteger targetRaise = (BigInteger)data[3];
-            BigInteger graduationBps = (BigInteger)data[4];
-            string discord = (string)data[5];
-            string x = (string)data[6];
-            string telegram = (string)data[7];
-            string repoUrl = (string)data[8];
             BigInteger minTokensOut = 0;
-            if (data[9] != null)
-                minTokensOut = (BigInteger)data[9];
+            if (data[1] != null)
+                minTokensOut = (BigInteger)data[1];
+            string name = (string)data[2];
+            string symbol = (string)data[3];
+            BigInteger targetRaise = (BigInteger)data[4];
+            BigInteger graduationBps = (BigInteger)data[5];
+            string discord = (string)data[6];
+            string x = (string)data[7];
+            string telegram = (string)data[8];
+            string repoUrl = (string)data[9];
 
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
