@@ -13,8 +13,8 @@ namespace DuoBondingCurve
         private const string FACTORY_KEY = "Factory";
         private const string ROUTER_KEY = "Router";
 
-        private static readonly BigInteger DEFAULT_TOTAL_SUPPLY = 100000000000000000;
-        private const byte DEFAULT_DECIMALS = 8;
+        private static readonly BigInteger DEFAULT_TOTAL_SUPPLY = 100000000000000000; // fixed at 1 B
+        private const byte DEFAULT_DECIMALS = 8; // fixed to 8 decimals
 
 
         private static Transaction Tx => (Transaction)Runtime.Transaction;
