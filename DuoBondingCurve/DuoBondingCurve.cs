@@ -65,11 +65,6 @@ namespace DuoBondingCurve
             Assert(telegram == null || telegram.Length <= 128, "INVALID_TELEGRAM_TOO_LONG");
             Assert(repoUrl == null || repoUrl.Length <= 256, "INVALID_REPOURL_TOO_LONG");
 
-            UInt160 factory = GetFactory();
-            UInt160 router = GetRouter();
-            // Assert(factory.IsValid && !factory.IsZero, "FACTORY_NOT_SET");
-            // Assert(router.IsValid && !router.IsZero, "ROUTER_NOT_SET");
-
             var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
             Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
