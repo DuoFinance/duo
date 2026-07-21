@@ -113,15 +113,6 @@ namespace DuoBondingCurve
         }
 
         [Safe]
-        public static BigInteger GetRefundAmount(UInt160 tokenHash, BigInteger tokenAmount)
-        {
-            Assert(tokenAmount > 0, "INVALID_AMOUNT");
-            var sale = GetSale(tokenHash);
-            Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
-            return GetAmountIn(sale, tokenAmount);
-        }
-
-        [Safe]
         public static BigInteger GetGASForTokens(UInt160 tokenHash, BigInteger tokenAmount)
         {
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
@@ -166,7 +157,7 @@ namespace DuoBondingCurve
         }
 
         // Buy (reverse): how much GAS for tokenAmount tokens (for refund calculation).
-        internal static BigInteger GetAmountIn(SaleInfo sale, BigInteger tokenAmount)
+        private static BigInteger GetAmountIn(SaleInfo sale, BigInteger tokenAmount)
         {
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
@@ -177,7 +168,7 @@ namespace DuoBondingCurve
 
         #region Helpers
 
-        internal static void Assert(bool condition, string message)
+        private static void Assert(bool condition, string message)
         {
             if (!condition)
             {
@@ -187,7 +178,7 @@ namespace DuoBondingCurve
         }
 
 
-        internal static string EscapeJsonString(string value)
+        private static string EscapeJsonString(string value)
         {
             string result = "";
             for (int i = 0; i < value.Length; i++)
@@ -204,7 +195,7 @@ namespace DuoBondingCurve
             return result;
         }
 
-        internal static string BuildImmutableTokenManifest(string name, string discord, string x, string telegram, string repoUrl)
+        private static string BuildImmutableTokenManifest(string name, string discord, string x, string telegram, string repoUrl)
         {
             string safeName = EscapeJsonString(name);
             string extra = "{}";
@@ -225,7 +216,7 @@ namespace DuoBondingCurve
             return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":835,\"safe\":false},{\"name\":\"initialise\",\"parameters\":[{\"name\":\"sender\",\"type\":\"Hash160\"},{\"name\":\"decimals\",\"type\":\"Integer\"},{\"name\":\"symbol\",\"type\":\"String\"},{\"name\":\"totalSupply\",\"type\":\"Integer\"}],\"returntype\":\"Void\",\"offset\":997,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1199,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":" + extra + "}";
         }
 
-        internal static byte[] GetLaunchpadNef()
+        private static byte[] GetLaunchpadNef()
         {
             return new byte[]
             {

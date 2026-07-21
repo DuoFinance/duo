@@ -105,16 +105,34 @@ public class DuoBondingCurveFlowTests
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
             "TST", targetRaise, (BigInteger)5001);
 
+        var saleBefore = GetSaleInfo(engine, bondingCurve, tokenHash);
+        BigInteger maxTokens = (BigInteger)100000000000000000 * saleBefore.GraduationBps / 10000;
+        BigInteger remainingTokens = maxTokens - saleBefore.TokensSold;
+
         BigInteger gasBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
-        BuyTokens(engine, bondingCurve, tokenHash, Owner, targetRaise * 10);
+        BigInteger gasSent = targetRaise * 10;
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, gasSent);
 
         var gasAfter = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
-        var gasSpent = gasBefore - gasAfter;
+        BigInteger gasSpent = gasBefore - gasAfter;
+
+        BigInteger gasReserve = saleBefore.VirtualGas + saleBefore.GASRaised;
+        BigInteger tokenReserve = saleBefore.VirtualToken - saleBefore.TokensSold;
+        BigInteger expectedActualGas = gasReserve * remainingTokens / (tokenReserve - remainingTokens);
+        if (gasReserve * remainingTokens % (tokenReserve - remainingTokens) != 0)
+            expectedActualGas += 1;
+        if (expectedActualGas > gasSent)
+            expectedActualGas = gasSent;
+
+        Assert.Equal(expectedActualGas, gasSpent);
+        Assert.Equal(expectedActualGas, gasBefore - gasAfter);
+
+        BigInteger refunded = gasSent - gasSpent;
+        Assert.Equal(gasSent, gasSpent + refunded);
+        Assert.True(refunded > 0, "Refunded should be greater than 0");
 
         var saleInfo = GetSaleInfo(engine, bondingCurve, tokenHash);
-        Assert.True(saleInfo.Graduated, "Should graduate");
-        Assert.True(gasSpent <= targetRaise * 2,
-            $"Should not spend excessive GAS. Spent: {gasSpent}, targetRaise: {targetRaise}");
+        Assert.True(saleInfo.Graduated, "Sale should be graduated");
     }
 
     [Fact]

@@ -70,15 +70,6 @@ public class DuoBondingCurveUnitTests
     }
 
     [Fact]
-    public void GetRefundAmount_ForUnknownSale_Faults()
-    {
-        var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getRefundAmount", dummyHash, 1_000_000));
-        Assert.NotNull(exception);
-    }
-
-    [Fact]
     public void GetSellAmount_ForUnknownSale_Faults()
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
@@ -316,15 +307,6 @@ public class DuoBondingCurveUnitTests
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
             Invoke(_engine, _bondingCurveHash, "getTokensForGAS", dummyHash, -1));
-        Assert.NotNull(exception);
-    }
-
-    [Fact]
-    public void GetRefundAmount_ZeroAmount_Faults()
-    {
-        var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
-        var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getRefundAmount", dummyHash, 0));
         Assert.NotNull(exception);
     }
 
