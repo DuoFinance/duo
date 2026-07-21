@@ -55,7 +55,7 @@ public class DuoBondingCurveFlowTests
             "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
         BigInteger gasAmount = 10_000_000_000;
 
-        var expectedTokens = Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, gasAmount).GetInteger();
+        var expectedTokens = Invoke(engine, bondingCurve, "getTokensForGAS", tokenHash, gasAmount).GetInteger();
 
         BuyTokens(engine, bondingCurve, tokenHash, Owner, gasAmount, minTokensOut: expectedTokens);
 
@@ -78,7 +78,7 @@ public class DuoBondingCurveFlowTests
         var tokenBalance = Invoke(engine, tokenHash, "balanceOf", Owner).GetInteger();
         Assert.True(tokenBalance > 0);
 
-        BigInteger expectedGasOut = Invoke(engine, bondingCurve, "getSellAmount", tokenHash, tokenBalance).GetInteger();
+        BigInteger expectedGasOut = Invoke(engine, bondingCurve, "getGASForTokens", tokenHash, tokenBalance).GetInteger();
 
         SellTokens(engine, bondingCurve, tokenHash, Owner, tokenBalance);
 

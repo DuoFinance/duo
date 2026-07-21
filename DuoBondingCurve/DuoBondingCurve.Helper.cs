@@ -99,12 +99,17 @@ namespace DuoBondingCurve
         }
 
         [Safe]
-        public static BigInteger GetBuyAmount(UInt160 tokenHash, BigInteger gasAmount)
+        public static BigInteger GetTokensForGAS(UInt160 tokenHash, BigInteger gasAmount)
         {
             Assert(gasAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
-            return GetAmountOut(sale, gasAmount);
+            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger tokensOut = GetAmountOut(gasReserve, tokenReserve, gasAmount);
+            BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
+            BigInteger remaining = maxTokens - sale.TokensSold;
+            return tokensOut > remaining ? remaining : tokensOut;
         }
 
         [Safe]
@@ -117,14 +122,16 @@ namespace DuoBondingCurve
         }
 
         [Safe]
-        public static BigInteger GetSellAmount(UInt160 tokenHash, BigInteger tokenAmount)
+        public static BigInteger GetGASForTokens(UInt160 tokenHash, BigInteger tokenAmount)
         {
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
 
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
-            return GetSellAmount(sale, tokenAmount);
+            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            return GetAmountOut(tokenReserve, gasReserve, tokenAmount);
         }
 
         #endregion
@@ -133,7 +140,6 @@ namespace DuoBondingCurve
         #region Curve Math
 
         // CP-AMM (x*y=k) with per-sale virtual reserves.
-        // k = VirtualGas * VirtualToken (constant during the sale).
         // gasReserve   = VirtualGas + GASRaised
         // tokenReserve = VirtualToken - TokensSold
         //
@@ -141,58 +147,30 @@ namespace DuoBondingCurve
         // and GASRaised = TargetRaise, the bonding curve price equals the Uniswap
         // initial price after graduation, ensuring seamless transition.
 
-        // Buy: user injects gasAmount GAS, tokens come out.
-        // newGasReserve = gasReserve + gasAmount
-        // newTokenReserve = k / newGasReserve
-        // tokensOut = tokenReserve - newTokenReserve
-        internal static BigInteger GetAmountOut(SaleInfo sale, BigInteger gasAmount)
+        // amountOut = reserveOut * amountIn / (reserveIn + amountIn)  // floor，
+        private static BigInteger GetAmountOut(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountIn)
         {
-            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-            if (tokenReserve <= 0) return 0;
+            if (amountIn <= 0 || reserveIn <= 0 || reserveOut <= 0) return 0;
+            return reserveOut * amountIn / (reserveIn + amountIn); 
+        }
 
-            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-            BigInteger newGasReserve = gasReserve + gasAmount;
-            BigInteger newTokenReserve = k / newGasReserve;
-            BigInteger tokensOut = tokenReserve - newTokenReserve;
-
-            // Cap at graduation point: P * TotalSupply
-            BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
-            BigInteger remaining = maxTokens - sale.TokensSold;
-            return tokensOut > remaining ? remaining : tokensOut;
+        // amountIn = reserveIn * amountOut / (reserveOut - amountOut)  // ceiling，
+        private static BigInteger GetAmountIn(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountOut)
+        {
+            if (amountOut <= 0 || reserveOut <= amountOut) return 0;
+            BigInteger numerator = reserveIn * amountOut;
+            BigInteger denominator = reserveOut - amountOut;
+            BigInteger result = numerator / denominator;
+            if (numerator % denominator != 0) result += 1; 
+            return result;
         }
 
         // Buy (reverse): how much GAS for tokenAmount tokens (for refund calculation).
-        // newTokenReserve = tokenReserve - tokenAmount
-        // newGasReserve = k / newTokenReserve
-        // gasIn = newGasReserve - gasReserve
         internal static BigInteger GetAmountIn(SaleInfo sale, BigInteger tokenAmount)
         {
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-            if (tokenReserve <= 0 || tokenAmount > tokenReserve) return 0;
-
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-            BigInteger newTokenReserve = tokenReserve - tokenAmount;
-            BigInteger newGasReserve = k / newTokenReserve;
-            return newGasReserve - gasReserve;
-        }
-
-        // Sell: user returns tokenAmount tokens, GAS comes out.
-        // newTokenReserve = tokenReserve + tokenAmount
-        // newGasReserve = k / newTokenReserve
-        // gasOut = gasReserve - newGasReserve
-        internal static BigInteger GetSellAmount(SaleInfo sale, BigInteger tokenAmount)
-        {
-            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-            BigInteger newTokenReserve = tokenReserve + tokenAmount;
-            BigInteger newGasReserve = k / newTokenReserve;
-            return gasReserve - newGasReserve;
+            return GetAmountIn(gasReserve, tokenReserve, tokenAmount);
         }
 
         #endregion

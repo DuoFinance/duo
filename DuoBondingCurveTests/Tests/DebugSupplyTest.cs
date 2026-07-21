@@ -36,9 +36,9 @@ public class DebugSupplyTest
         var (ln, lm) = LoadContract("DuoLaunchpad");
         var tokenHash = DeployContract(engine, ln, lm, null);
 
-        BigInteger totalSupply = 1_000_000_000; // display
+        BigInteger totalSupply = 1_000_000_000;
         byte decimals = 8;
-        BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals); // raw
+        BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals);
         string symbol = "TST";
         Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, rawSupply);
 
@@ -49,7 +49,6 @@ public class DebugSupplyTest
         BigInteger vToken = rawSupply * pSquared / (10000 * twoPminusOne);
         BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
-        // Build the serialized SaleInfo map (matching StdLib.Serialize format for struct)
         var map = new Map();
         map[(BigInteger)0] = (Neo.VM.Types.ByteString)tokenHash.GetSpan().ToArray();
         map[(BigInteger)1] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
@@ -82,7 +81,7 @@ public class DebugSupplyTest
         Assert.Equal(graduationBps, resultMap[(BigInteger)7].GetInteger());
         Assert.False(resultMap[(BigInteger)8].GetBoolean());
 
-        var buyResult = Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, (BigInteger)10_000_000_000);
+        var buyResult = Invoke(engine, bondingCurve, "getTokensForGAS", tokenHash, (BigInteger)10_000_000_000);
         Assert.True(buyResult.GetInteger() > 0);
     }
 }

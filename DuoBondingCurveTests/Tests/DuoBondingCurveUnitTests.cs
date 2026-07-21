@@ -65,7 +65,7 @@ public class DuoBondingCurveUnitTests
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getBuyAmount", dummyHash, 100_000_000));
+            Invoke(_engine, _bondingCurveHash, "getTokensForGAS", dummyHash, 100_000_000));
         Assert.NotNull(exception);
     }
 
@@ -83,7 +83,7 @@ public class DuoBondingCurveUnitTests
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getSellAmount", dummyHash, 1_000_000));
+            Invoke(_engine, _bondingCurveHash, "getGASForTokens", dummyHash, 1_000_000));
         Assert.NotNull(exception);
     }
 
@@ -306,7 +306,7 @@ public class DuoBondingCurveUnitTests
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getBuyAmount", dummyHash, 0));
+            Invoke(_engine, _bondingCurveHash, "getTokensForGAS", dummyHash, 0));
         Assert.NotNull(exception);
     }
 
@@ -315,7 +315,7 @@ public class DuoBondingCurveUnitTests
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getBuyAmount", dummyHash, -1));
+            Invoke(_engine, _bondingCurveHash, "getTokensForGAS", dummyHash, -1));
         Assert.NotNull(exception);
     }
 
@@ -333,7 +333,7 @@ public class DuoBondingCurveUnitTests
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
         var exception = Record.Exception(() =>
-            Invoke(_engine, _bondingCurveHash, "getSellAmount", dummyHash, 0));
+            Invoke(_engine, _bondingCurveHash, "getGASForTokens", dummyHash, 0));
         Assert.NotNull(exception);
     }
 

@@ -187,8 +187,9 @@ namespace DuoBondingCurve
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
-            BigInteger tokens = GetAmountOut(sale, gasAmount);
-            Assert(tokens > 0, "ZERO_TOKENS");
+            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger tokens = GetAmountOut(gasReserve, tokenReserve, gasAmount);
 
             BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
             BigInteger remainingToGrad = maxTokens - sale.TokensSold;
@@ -244,7 +245,9 @@ namespace DuoBondingCurve
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
             //Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
 
-            BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
+            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger gasReturn = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
             // Assert(gasReturn > 0, "ZERO_GAS");
             // Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
 

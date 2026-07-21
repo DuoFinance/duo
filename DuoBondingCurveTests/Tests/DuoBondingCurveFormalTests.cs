@@ -40,45 +40,36 @@ public class DuoBondingCurveFormalTests
         };
     }
 
-    private static BigInteger GetAmountOut(SaleInfoModel sale, BigInteger gasAmount)
+    private static BigInteger GetAmountOut(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountIn)
     {
-        BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-        if (tokenReserve <= 0) return 0;
+        if (reserveIn <= 0 || reserveOut <= 0 || amountIn <= 0) return 0;
+        BigInteger k = reserveIn * reserveOut;
+        BigInteger newReserveIn = reserveIn + amountIn;
+        BigInteger newReserveOut = k / newReserveIn;
+        return reserveOut - newReserveOut;
+    }
 
-        BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-        BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-        BigInteger newGasReserve = gasReserve + gasAmount;
-        BigInteger newTokenReserve = k / newGasReserve;
-        BigInteger tokensOut = tokenReserve - newTokenReserve;
-
-        BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
-        BigInteger remaining = maxTokens - sale.TokensSold;
-        return tokensOut > remaining ? remaining : tokensOut;
+    private static BigInteger GetAmountIn(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountOut)
+    {
+        if (reserveIn <= 0 || reserveOut <= amountOut || amountOut <= 0) return 0;
+        BigInteger numerator = reserveIn * amountOut;
+        BigInteger denominator = reserveOut - amountOut;
+        BigInteger result = numerator / denominator;
+        if (numerator % denominator != 0) result += 1;
+        return result;
     }
 
     private static BigInteger GetAmountIn(SaleInfoModel sale, BigInteger tokenAmount)
     {
-        BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-        if (tokenReserve <= 0 || tokenAmount > tokenReserve) return 0;
-
-        BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-        BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-        BigInteger newTokenReserve = tokenReserve - tokenAmount;
-        BigInteger newGasReserve = k / newTokenReserve;
-        return newGasReserve - gasReserve;
-    }
-
-    private static BigInteger GetSellAmount(SaleInfoModel sale, BigInteger tokenAmount)
-    {
+        if (tokenAmount <= 0) return 0;
         BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
         BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-        BigInteger k = sale.VirtualGas * sale.VirtualToken;
-
-        BigInteger newTokenReserve = tokenReserve + tokenAmount;
-        BigInteger newGasReserve = k / newTokenReserve;
-        return gasReserve - newGasReserve;
+        if (tokenReserve <= tokenAmount) return 0;
+        BigInteger numerator = gasReserve * tokenAmount;
+        BigInteger denominator = tokenReserve - tokenAmount;
+        BigInteger result = numerator / denominator;
+        if (numerator % denominator != 0) result += 1;
+        return result;
     }
 
     private static BigInteger GetCurrentPrice(SaleInfoModel sale)
@@ -90,7 +81,12 @@ public class DuoBondingCurveFormalTests
 
     private static SaleInfoModel ApplyBuy(SaleInfoModel sale, BigInteger gasAmount)
     {
-        BigInteger tokens = GetAmountOut(sale, gasAmount);
+        BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+        BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+        BigInteger k = sale.VirtualGas * sale.VirtualToken;
+        BigInteger newGasReserve = gasReserve + gasAmount;
+        BigInteger newTokenReserve = k / newGasReserve;
+        BigInteger tokens = tokenReserve - newTokenReserve;
         BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
         BigInteger remaining = maxTokens - sale.TokensSold;
         BigInteger actualGas = gasAmount;
@@ -106,7 +102,12 @@ public class DuoBondingCurveFormalTests
 
     private static SaleInfoModel ApplySell(SaleInfoModel sale, BigInteger tokenAmount)
     {
-        BigInteger gasReturn = GetSellAmount(sale, tokenAmount);
+        BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+        BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+        BigInteger k = sale.VirtualGas * sale.VirtualToken;
+        BigInteger newTokenReserve = tokenReserve + tokenAmount;
+        BigInteger newGasReserve = k / newTokenReserve;
+        BigInteger gasReturn = gasReserve - newGasReserve;
         sale.TokensSold -= tokenAmount;
         sale.GASRaised -= gasReturn;
         return sale;
@@ -257,7 +258,7 @@ public class DuoBondingCurveFormalTests
         sale = ApplyBuy(sale, 1_000_000_000);
 
         BigInteger testGas = 500_000_000;
-        BigInteger tokensOut = GetAmountOut(sale, testGas);
+        BigInteger tokensOut = GetAmountOut(sale.VirtualGas + sale.GASRaised, sale.VirtualToken - sale.TokensSold, testGas);
 
         if (tokensOut > 0)
         {
@@ -423,7 +424,7 @@ public class DuoBondingCurveFormalTests
             sale = ApplyBuy(sale, preBuyGas);
 
             long testGas = rng.NextInt64(1_000_000, 100_000_000_000);
-            BigInteger tokensOut = GetAmountOut(sale, testGas);
+            BigInteger tokensOut = GetAmountOut(sale.VirtualGas + sale.GASRaised, sale.VirtualToken - sale.TokensSold, testGas);
 
             if (tokensOut > 0)
             {
@@ -446,7 +447,7 @@ public class DuoBondingCurveFormalTests
             int graduationBps = rng.Next(5000, 8001);
 
             var sale = CreateSaleModel(totalSupply, targetRaise, graduationBps);
-            BigInteger maxTokens = sale.TotalSupply * graduationBps / 10000;
+            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
 
             long hugeGas = rng.NextInt64(1_000_000_000_000, 1_000_000_000_000_000_000);
             var after = ApplyBuy(sale, hugeGas);
@@ -534,7 +535,7 @@ public class DuoBondingCurveFormalTests
             Assert.True(sale.VirtualGas >= 0,
                 $"Fuzz fail: VirtualGas < 0. iter={i}, vGas={sale.VirtualGas}");
 
-            BigInteger maxTokens = sale.TotalSupply * graduationBps / 10000;
+            BigInteger maxTokens = sale.TotalSupply * sale.GraduationBps / 10000;
             BigInteger initialTokenReserve = sale.VirtualToken;
             Assert.True(initialTokenReserve > maxTokens,
                 $"Fuzz fail: initial token reserve <= maxTokens. iter={i}, reserve={initialTokenReserve}, max={maxTokens}");
@@ -542,7 +543,7 @@ public class DuoBondingCurveFormalTests
     }
 
     [Fact]
-    public void Fuzz_GetSellAmount_NeverExceedsGASRaised()
+    public void Fuzz_GetAmountOut_NeverExceedsGASRaised()
     {
         var rng = new Random(192021);
         for (int i = 0; i < 100; i++)
@@ -561,7 +562,7 @@ public class DuoBondingCurveFormalTests
                 BigInteger sellAmount = rng.NextInt64(1, (long)(sale.TokensSold + 1));
                 if (sellAmount > sale.TokensSold) sellAmount = sale.TokensSold;
 
-                BigInteger gasReturn = GetSellAmount(sale, sellAmount);
+                BigInteger gasReturn = GetAmountOut(sale.VirtualToken - sale.TokensSold, sale.VirtualGas + sale.GASRaised, sellAmount);
 
                 Assert.True(gasReturn <= sale.GASRaised,
                     $"Fuzz fail: sell returns more than raised. iter={i}, return={gasReturn}, raised={sale.GASRaised}");
@@ -579,7 +580,7 @@ public class DuoBondingCurveFormalTests
     public void Edge_BuyZeroAmount_ReturnsZero()
     {
         var sale = CreateSaleModel(1_000_000_000, 10_000_000_000, 6500);
-        BigInteger tokens = GetAmountOut(sale, 0);
+        BigInteger tokens = GetAmountOut(sale.VirtualGas + sale.GASRaised, sale.VirtualToken - sale.TokensSold, 0);
         Assert.Equal(BigInteger.Zero, tokens);
     }
 
@@ -588,7 +589,7 @@ public class DuoBondingCurveFormalTests
     {
         var sale = CreateSaleModel(1_000_000_000, 10_000_000_000, 6500);
         sale = ApplyBuy(sale, 1_000_000_000);
-        BigInteger gasReturn = GetSellAmount(sale, 0);
+        BigInteger gasReturn = GetAmountOut(sale.VirtualToken - sale.TokensSold, sale.VirtualGas + sale.GASRaised, 0);
         Assert.True(BigInteger.Abs(gasReturn) < 10,
             $"Sell zero amount should return near zero. Got {gasReturn}");
     }
@@ -629,7 +630,7 @@ public class DuoBondingCurveFormalTests
     {
         var sale = CreateSaleModel(1_000_000_000, 10_000_000_000, 6500);
         sale.TokensSold = sale.VirtualToken;
-        BigInteger tokens = GetAmountOut(sale, 1_000_000_000);
+        BigInteger tokens = GetAmountOut(sale.VirtualGas + sale.GASRaised, sale.VirtualToken - sale.TokensSold, 1_000_000_000);
         Assert.Equal(BigInteger.Zero, tokens);
     }
 
@@ -672,7 +673,7 @@ public class DuoBondingCurveFormalTests
 
         BigInteger priceBefore = GetCurrentPrice(sale);
         BigInteger gasAmount = 100_000_000;
-        BigInteger tokensOut = GetAmountOut(sale, gasAmount);
+        BigInteger tokensOut = GetAmountOut(sale.VirtualGas + sale.GASRaised, sale.VirtualToken - sale.TokensSold, gasAmount);
         BigInteger avgPrice = gasAmount * 100_000_000 / tokensOut;
 
         Assert.True(avgPrice >= priceBefore,
@@ -687,7 +688,7 @@ public class DuoBondingCurveFormalTests
 
         BigInteger priceBefore = GetCurrentPrice(sale);
         BigInteger sellAmount = sale.TokensSold / 2;
-        BigInteger gasOut = GetSellAmount(sale, sellAmount);
+        BigInteger gasOut = GetAmountOut(sale.VirtualToken - sale.TokensSold, sale.VirtualGas + sale.GASRaised, sellAmount);
         BigInteger avgPrice = gasOut * 100_000_000 / sellAmount;
 
         Assert.True(avgPrice <= priceBefore,

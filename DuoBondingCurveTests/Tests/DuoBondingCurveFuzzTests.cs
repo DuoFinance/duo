@@ -53,14 +53,14 @@ public class DuoBondingCurveFuzzTests
         };
     }
 
-    private static BigInteger GetBuyAmount(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash, BigInteger gas)
+    private static BigInteger GetTokensForGAS(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash, BigInteger gas)
     {
-        return Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, gas).GetInteger();
+        return Invoke(engine, bondingCurve, "getTokensForGAS", tokenHash, gas).GetInteger();
     }
 
-    private static BigInteger GetSellAmount(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash, BigInteger tokens)
+    private static BigInteger GetGASForTokens(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash, BigInteger tokens)
     {
-        return Invoke(engine, bondingCurve, "getSellAmount", tokenHash, tokens).GetInteger();
+        return Invoke(engine, bondingCurve, "getGASForTokens", tokenHash, tokens).GetInteger();
     }
 
     private static BigInteger GetPrice(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
@@ -236,7 +236,7 @@ public class DuoBondingCurveFuzzTests
             var sale = GetSale(engine, bondingCurve, tokenHash);
 
             long gasIn = rng.NextInt64(1, 1_000_000_000_000);
-            BigInteger tokensOut = GetBuyAmount(engine, bondingCurve, tokenHash, gasIn);
+            BigInteger tokensOut = GetTokensForGAS(engine, bondingCurve, tokenHash, gasIn);
 
             Assert.True(tokensOut >= 0, $"iter {i}: tokensOut={tokensOut} (<0)");
 
@@ -263,8 +263,8 @@ public class DuoBondingCurveFuzzTests
 
             long smallGas = 1_000_000;
             long largeGas = 100_000_000_000;
-            BigInteger smallOut = GetBuyAmount(engine, bondingCurve, tokenHash, smallGas);
-            BigInteger largeOut = GetBuyAmount(engine, bondingCurve, tokenHash, largeGas);
+            BigInteger smallOut = GetTokensForGAS(engine, bondingCurve, tokenHash, smallGas);
+            BigInteger largeOut = GetTokensForGAS(engine, bondingCurve, tokenHash, largeGas);
 
             Assert.True(largeOut >= smallOut,
                 $"iter {i}: more GAS -> fewer tokens. small={smallOut}, large={largeOut}");
@@ -289,7 +289,7 @@ public class DuoBondingCurveFuzzTests
             // 0 GAS → should return 0 (or FAULT)
             try
             {
-                BigInteger tokens = GetBuyAmount(engine, bondingCurve, tokenHash, 0);
+                BigInteger tokens = GetTokensForGAS(engine, bondingCurve, tokenHash, 0);
                 Assert.True(tokens == 0 || tokens < 0,
                     $"iter {i}: zero gas should return 0 or fault. Got {tokens}");
             }
@@ -330,7 +330,7 @@ public class DuoBondingCurveFuzzTests
                 if (current.Graduated) break;
 
                 long gasAmount = rng.NextInt64(1_000_000, Math.Max(1_000_001, targetRaise / 10));
-                BigInteger tokens = GetBuyAmount(engine, bondingCurve, tokenHash, gasAmount);
+                BigInteger tokens = GetTokensForGAS(engine, bondingCurve, tokenHash, gasAmount);
 
                 BigInteger maxTokens = current.GraduationBps * 100000000000000000 / 10000;
                 BigInteger remaining = maxTokens - current.TokensSold;
@@ -399,7 +399,7 @@ public class DuoBondingCurveFuzzTests
             BigInteger tokensOut;
             try
             {
-                tokensOut = GetBuyAmount(engine, bondingCurve, tokenHash, targetRaise);
+                tokensOut = GetTokensForGAS(engine, bondingCurve, tokenHash, targetRaise);
             }
             catch { continue; }
             if (tokensOut <= 0) continue;
@@ -411,7 +411,7 @@ public class DuoBondingCurveFuzzTests
             BigInteger gasNeeded;
             try
             {
-                var refResult = Invoke(engine, bondingCurve, "getBuyAmount", tokenHash, targetRaise);
+                var refResult = Invoke(engine, bondingCurve, "getTokensForGAS", tokenHash, targetRaise);
                 var raw = refResult.GetInteger();
                 // Compute actual gas using the on-chain formula inverse
                 if (raw <= 0) continue;
@@ -452,7 +452,7 @@ public class DuoBondingCurveFuzzTests
                 if (sellTokens > sale.TokensSold) sellTokens = sale.TokensSold;
                 if (sellTokens <= 0) continue;
 
-                BigInteger gasReturn = GetSellAmount(engine, bondingCurve, tokenHash, sellTokens);
+                BigInteger gasReturn = GetGASForTokens(engine, bondingCurve, tokenHash, sellTokens);
 
                 Assert.True(gasReturn >= 0,
                     $"iter {i}: sell returned negative GAS. return={gasReturn}");
@@ -488,7 +488,7 @@ public class DuoBondingCurveFuzzTests
             long gasIn = rng.NextInt64(1_000_000, Math.Min(targetRaise, 1_000_000_000_000));
             try
             {
-                var _ = GetBuyAmount(engine, bondingCurve, tokenHash, gasIn);
+                var _ = GetTokensForGAS(engine, bondingCurve, tokenHash, gasIn);
             }
             catch { continue; }
             // Compute actual buy via formula
@@ -527,7 +527,7 @@ public class DuoBondingCurveFuzzTests
             // Sell all
             try
             {
-                BigInteger gasReturn = GetSellAmount(engine, bondingCurve, tokenHash, tokensOut);
+                BigInteger gasReturn = GetGASForTokens(engine, bondingCurve, tokenHash, tokensOut);
                 Assert.True(gasReturn >= 0,
                     $"iter {i}: round-trip returned negative GAS. return={gasReturn}");
 
@@ -604,16 +604,16 @@ public class DuoBondingCurveFuzzTests
             Assert.True(sale.VirtualToken > maxTokens,
                 $"bps={bps}: vToken={sale.VirtualToken} <= maxTokens={maxTokens}");
 
-            // Verify on-chain getBuyAmount works
+            // Verify on-chain getTokensForGAS works
             long testGas = rng.NextInt64(1_000_000, Math.Min(targetRaise, 1_000_000_000));
             try
             {
-                BigInteger tokens = GetBuyAmount(engine, bondingCurve, tokenHash, testGas);
+                BigInteger tokens = GetTokensForGAS(engine, bondingCurve, tokenHash, testGas);
                 Assert.True(tokens >= 0, $"bps={bps}: buy amount < 0");
             }
             catch (TestException ex)
             {
-                Assert.Fail($"bps={bps}: getBuyAmount faulted. {ex.Message}");
+                Assert.Fail($"bps={bps}: getTokensForGAS faulted. {ex.Message}");
             }
         }
     }
