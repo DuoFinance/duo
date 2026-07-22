@@ -16,7 +16,6 @@ namespace DuoBondingCurve
         private static readonly BigInteger DEFAULT_TOTAL_SUPPLY = 100000000000000000; // fixed at 1 B
         private const byte DEFAULT_DECIMALS = 8; // fixed to 8 decimals
 
-
         private static Transaction Tx => (Transaction)Runtime.Transaction;
 
         #region Storage
@@ -28,7 +27,13 @@ namespace DuoBondingCurve
             SaleMap.Put(tokenHash, StdLib.Serialize(info));
         }
 
-        private static SaleInfo GetSale(UInt160 tokenHash)
+        private static bool SaleExists(SaleInfo sale)
+        {
+            return sale.TokenHash.IsValid && !sale.TokenHash.IsZero;
+        }
+
+        [Safe]
+        public static SaleInfo GetSale(UInt160 tokenHash)
         {
             var raw = SaleMap.Get(tokenHash);
             if (raw is null || raw.Length == 0)
@@ -36,9 +41,18 @@ namespace DuoBondingCurve
             return (SaleInfo)StdLib.Deserialize(raw);
         }
 
-        private static bool SaleExists(SaleInfo sale)
+        [Safe]
+        public static UInt160 GetFactory()
         {
-            return sale.TokenHash.IsValid && !sale.TokenHash.IsZero;
+            var raw = Storage.Get(Storage.CurrentContext, FACTORY_KEY);
+            return raw?.Length == 20 ? (UInt160)raw : UInt160.Zero;
+        }
+
+        [Safe]
+        public static UInt160 GetRouter()
+        {
+            var raw = Storage.Get(Storage.CurrentContext, ROUTER_KEY);
+            return raw?.Length == 20 ? (UInt160)raw : UInt160.Zero;
         }
 
         #endregion
@@ -65,27 +79,6 @@ namespace DuoBondingCurve
         #endregion
 
         #region Getters
-
-
-        [Safe]
-        public static UInt160 GetFactory()
-        {
-            var raw = Storage.Get(Storage.CurrentContext, FACTORY_KEY);
-            return raw?.Length == 20 ? (UInt160)raw : UInt160.Zero;
-        }
-
-        [Safe]
-        public static UInt160 GetRouter()
-        {
-            var raw = Storage.Get(Storage.CurrentContext, ROUTER_KEY);
-            return raw?.Length == 20 ? (UInt160)raw : UInt160.Zero;
-        }
-
-        [Safe]
-        public static SaleInfo GetSaleInfo(UInt160 tokenHash)
-        {
-            return GetSale(tokenHash);
-        }
 
         [Safe]
         public static BigInteger GetCurrentPrice(UInt160 tokenHash)
@@ -138,11 +131,11 @@ namespace DuoBondingCurve
         // and GASRaised = TargetRaise, the bonding curve price equals the Uniswap
         // initial price after graduation, ensuring seamless transition.
 
-        // amountOut = reserveOut * amountIn / (reserveIn + amountIn)  // floor，
+        // amountOut = reserveOut * amountIn / (reserveIn + amountIn)  
         private static BigInteger GetAmountOut(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountIn)
         {
             if (amountIn <= 0 || reserveIn <= 0 || reserveOut <= 0) return 0;
-            return reserveOut * amountIn / (reserveIn + amountIn); 
+            return reserveOut * amountIn / (reserveIn + amountIn);
         }
 
         // amountIn = reserveIn * amountOut / (reserveOut - amountOut)  // ceiling，
@@ -152,7 +145,7 @@ namespace DuoBondingCurve
             BigInteger numerator = reserveIn * amountOut;
             BigInteger denominator = reserveOut - amountOut;
             BigInteger result = numerator / denominator;
-            if (numerator % denominator != 0) result += 1; 
+            if (numerator % denominator != 0) result += 1;
             return result;
         }
 
@@ -207,10 +200,10 @@ namespace DuoBondingCurve
             {
                 extra = "{";
                 bool first = true;
-                if (hasDiscord)  { extra += "\"discord\":\"" + EscapeJsonString(discord) + "\""; first = false; }
-                if (hasX)        { extra += (first ? "" : ",") + "\"x\":\"" + EscapeJsonString(x) + "\""; first = false; }
+                if (hasDiscord) { extra += "\"discord\":\"" + EscapeJsonString(discord) + "\""; first = false; }
+                if (hasX) { extra += (first ? "" : ",") + "\"x\":\"" + EscapeJsonString(x) + "\""; first = false; }
                 if (hasTelegram) { extra += (first ? "" : ",") + "\"telegram\":\"" + EscapeJsonString(telegram) + "\""; first = false; }
-                if (hasRepoUrl)  { extra += (first ? "" : ",") + "\"repoUrl\":\"" + EscapeJsonString(repoUrl) + "\""; }
+                if (hasRepoUrl) { extra += (first ? "" : ",") + "\"repoUrl\":\"" + EscapeJsonString(repoUrl) + "\""; }
                 extra += "}";
             }
             return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":835,\"safe\":false},{\"name\":\"initialise\",\"parameters\":[{\"name\":\"sender\",\"type\":\"Hash160\"},{\"name\":\"decimals\",\"type\":\"Integer\"},{\"name\":\"symbol\",\"type\":\"String\"},{\"name\":\"totalSupply\",\"type\":\"Integer\"}],\"returntype\":\"Void\",\"offset\":997,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1199,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":" + extra + "}";

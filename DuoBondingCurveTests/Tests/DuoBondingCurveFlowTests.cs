@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
 using Xunit;
 using Neo;
@@ -25,7 +25,7 @@ public class DuoBondingCurveFlowTests
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
             "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
-        var saleBefore = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleBefore = getSale(engine, bondingCurve, tokenHash);
         Assert.Equal(BigInteger.Zero, saleBefore.TokensSold);
         Assert.Equal(BigInteger.Zero, saleBefore.GASRaised);
 
@@ -41,7 +41,7 @@ public class DuoBondingCurveFlowTests
         Assert.True(buyerGasAfter < buyerGasBefore, "GAS should decrease");
         Assert.True(buyerTokenAfter > buyerTokenBefore, "Tokens should increase");
 
-        var saleAfter = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleAfter = getSale(engine, bondingCurve, tokenHash);
         Assert.Equal(buyerTokenAfter, saleAfter.TokensSold);
         Assert.Equal(buyerGasBefore - buyerGasAfter, saleAfter.GASRaised);
         Assert.False(saleAfter.Graduated, "Sale should not graduate with small buy");
@@ -91,7 +91,7 @@ public class DuoBondingCurveFlowTests
         Assert.True(BigInteger.Abs(gasReturned - expectedGasOut) <= tol,
             $"Gas returned mismatch. expected={expectedGasOut}, actual={gasReturned}");
 
-        var saleAfter = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleAfter = getSale(engine, bondingCurve, tokenHash);
         Assert.Equal(BigInteger.Zero, saleAfter.TokensSold);
     }
 
@@ -105,7 +105,7 @@ public class DuoBondingCurveFlowTests
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
             "TST", targetRaise, (BigInteger)5001);
 
-        var saleBefore = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleBefore = getSale(engine, bondingCurve, tokenHash);
         BigInteger maxTokens = (BigInteger)100000000000000000 * saleBefore.GraduationBps / 10000;
         BigInteger remainingTokens = maxTokens - saleBefore.TokensSold;
 
@@ -131,7 +131,7 @@ public class DuoBondingCurveFlowTests
         Assert.Equal(gasSent, gasSpent + refunded);
         Assert.True(refunded > 0, "Refunded should be greater than 0");
 
-        var saleInfo = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleInfo = getSale(engine, bondingCurve, tokenHash);
         Assert.True(saleInfo.Graduated, "Sale should be graduated");
     }
 
@@ -166,11 +166,11 @@ public class DuoBondingCurveFlowTests
         var tokenHash = SetupSale(engine, factory, router, bondingCurve,
             "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
-        var saleInitial = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleInitial = getSale(engine, bondingCurve, tokenHash);
         BigInteger idealK = saleInitial.VirtualGas * saleInitial.VirtualToken;
 
         BuyTokens(engine, bondingCurve, tokenHash, Owner, 20_000_000_000);
-        var saleAfterBuy = GetSaleInfo(engine, bondingCurve, tokenHash);
+        var saleAfterBuy = getSale(engine, bondingCurve, tokenHash);
         BigInteger actualKAfterBuy = (saleAfterBuy.VirtualGas + saleAfterBuy.GASRaised) *
                                       (saleAfterBuy.VirtualToken - saleAfterBuy.TokensSold);
 
@@ -182,7 +182,7 @@ public class DuoBondingCurveFlowTests
         if (halfTokens > 0)
         {
             SellTokens(engine, bondingCurve, tokenHash, Owner, halfTokens);
-            var saleAfterSell = GetSaleInfo(engine, bondingCurve, tokenHash);
+            var saleAfterSell = getSale(engine, bondingCurve, tokenHash);
             BigInteger actualKAfterSell = (saleAfterSell.VirtualGas + saleAfterSell.GASRaised) *
                                             (saleAfterSell.VirtualToken - saleAfterSell.TokensSold);
             Assert.True(BigInteger.Abs(actualKAfterSell - idealK) <= tolerance,
@@ -274,9 +274,9 @@ public class DuoBondingCurveFlowTests
         Invoke(engine, tokenHash, "transfer", seller, bondingCurve, tokenAmount, data);
     }
 
-    private static SaleInfo GetSaleInfo(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
+    private static SaleInfo getSale(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
     {
-        var result = Invoke(engine, bondingCurve, "getSaleInfo", tokenHash);
+        var result = Invoke(engine, bondingCurve, "getSale", tokenHash);
         var map = (Neo.VM.Types.Map)result;
         return new SaleInfo
         {

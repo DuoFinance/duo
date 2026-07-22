@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
 using Xunit;
 using Neo;
@@ -70,7 +70,7 @@ public class DebugSupplyTest
         store.Add(new StorageKey { Id = bcId, Key = keyBytes }, new StorageItem { Value = serializedSale });
         store.Commit();
 
-        var result = Invoke(engine, bondingCurve, "getSaleInfo", tokenHash);
+        var result = Invoke(engine, bondingCurve, "getSale", tokenHash);
         var resultMap = (Neo.VM.Types.Map)result;
 
         Assert.Equal(BigInteger.Zero, resultMap[(BigInteger)2].GetInteger());

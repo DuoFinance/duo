@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
 using Xunit;
 using Neo;
@@ -39,7 +39,7 @@ public class DuoBondingCurveFuzzTests
 
     private static VmSaleInfo GetSale(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash)
     {
-        var result = Invoke(engine, bondingCurve, "getSaleInfo", tokenHash);
+        var result = Invoke(engine, bondingCurve, "getSale", tokenHash);
         var map = (Map)result;
         return new VmSaleInfo
         {

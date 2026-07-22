@@ -161,12 +161,28 @@ namespace DuoBondingCurve
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
 
-            UInt160 tokenHash = CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, discord, x, telegram, repoUrl, buyer);
+            UInt160 tokenHash = CreateSaleInternal(
+                name, 
+                symbol, 
+                totalSupply, 
+                decimals, 
+                targetRaise, 
+                graduationBps, 
+                discord, 
+                x, 
+                telegram, 
+                repoUrl, 
+                buyer);
 
             ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
         }
 
-        private static void ProcessBuy(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
+        private static void ProcessBuy(
+            UInt160 buyer,
+            UInt160 tokenHash, 
+            BigInteger gasAmount, 
+            BigInteger minTokensOut
+            )
         {
             Enter();
 
@@ -215,7 +231,14 @@ namespace DuoBondingCurve
                 StoreSale(tokenHash, sale);
             }
 
-            OnTokensPurchased(buyer, tokenHash, tokens, actualGas, sale.TokensSold, sale.GASRaised);
+            OnTokensPurchased(
+                buyer, 
+                tokenHash, 
+                tokens, 
+                actualGas, 
+                sale.TokensSold, 
+                sale.GASRaised
+                );
             Exit();
         }
 
@@ -223,7 +246,11 @@ namespace DuoBondingCurve
 
         #region Selling
 
-        private static void ProcessSell(UInt160 seller, UInt160 tokenHash, BigInteger tokenAmount, BigInteger minGasOut)
+        private static void ProcessSell(
+            UInt160 seller, 
+            UInt160 tokenHash, 
+            BigInteger tokenAmount, 
+            BigInteger minGasOut)
         {
             Enter();
             Assert(tokenAmount > 0, "INVALID_AMOUNT");
@@ -245,7 +272,14 @@ namespace DuoBondingCurve
             Assert(ok, "GAS_TRANSFER_FAILED");
 
             StoreSale(tokenHash, sale);
-            OnTokensSold(seller, tokenHash, tokenAmount, gasReturn, sale.TokensSold, sale.GASRaised);
+            OnTokensSold(
+                seller, 
+                tokenHash, 
+                tokenAmount, 
+                gasReturn, 
+                sale.TokensSold, 
+                sale.GASRaised
+                );
 
             Exit();
         }
@@ -300,7 +334,13 @@ namespace DuoBondingCurve
 
                     sale.Graduated = true;
                     StoreSale(tokenHash, sale);
-                    OnSaleCompleted(tokenHash, pair, mintedLiquidity, remainingTokens, raisedGAS);
+                    OnSaleCompleted(
+                        tokenHash, 
+                        pair, 
+                        mintedLiquidity, 
+                        remainingTokens, 
+                        raisedGAS
+                        );
                     return;
                 }
             }
@@ -319,7 +359,8 @@ namespace DuoBondingCurve
                 Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
                 gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
 
-                bool deployed = GAS.Transfer(Runtime.ExecutingScriptHash, factory, pair_DeployFee,
+                bool deployed = GAS.Transfer(
+                    Runtime.ExecutingScriptHash, factory, pair_DeployFee,
                     new object[] { tokenHash, GAS.Hash });
                 Assert(deployed, "PAIR_DEPLOY_FAILED");
 

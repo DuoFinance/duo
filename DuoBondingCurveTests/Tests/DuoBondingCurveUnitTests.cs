@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using Xunit;
 using Neo;
 using Neo.Network.P2P.Payloads;
@@ -44,10 +44,10 @@ public class DuoBondingCurveUnitTests
     }
 
     [Fact]
-    public void GetSaleInfo_ForUnknownSale_ReturnsEmpty()
+    public void getSale_ForUnknownSale_ReturnsEmpty()
     {
         var dummyHash = UInt160.Parse("0x00000000000000000000000000000000000000ff");
-        var result = Invoke(_engine, _bondingCurveHash, "getSaleInfo", dummyHash);
+        var result = Invoke(_engine, _bondingCurveHash, "getSale", dummyHash);
         Assert.NotNull(result);
     }
 
