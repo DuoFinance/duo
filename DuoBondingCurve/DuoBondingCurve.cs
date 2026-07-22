@@ -38,7 +38,18 @@ namespace DuoBondingCurve
             Enter();
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
-            CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, discord, x, telegram, repoUrl, Tx.Sender);
+            CreateSaleInternal(
+                name, 
+                symbol, 
+                totalSupply, 
+                decimals, 
+                targetRaise, 
+                graduationBps, 
+                discord, 
+                x, 
+                telegram, 
+                repoUrl, 
+                Tx.Sender);
             Exit();
         }
 
@@ -113,11 +124,10 @@ namespace DuoBondingCurve
             Assert(amount > 0, "INVALID_AMOUNT");
 
             UInt160 caller = Runtime.CallingScriptHash;
-
             if (caller == GAS.Hash)
             {
                 Assert(data != null && data.Length > 0, "INVALID_TRANSFER_DATA");
-
+                
                 if (data[0] is string && (string)data[0] == "CreateAndBuy")
                 {
                     ProcessCreateAndBuy(from, amount, data);
