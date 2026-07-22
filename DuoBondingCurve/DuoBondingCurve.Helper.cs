@@ -138,7 +138,7 @@ namespace DuoBondingCurve
             return reserveOut * amountIn / (reserveIn + amountIn);
         }
 
-        // amountIn = reserveIn * amountOut / (reserveOut - amountOut)  // ceiling，
+        // amountIn = reserveIn * amountOut / (reserveOut - amountOut) 
         private static BigInteger GetAmountIn(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountOut)
         {
             if (amountOut <= 0 || reserveOut <= amountOut) return 0;
