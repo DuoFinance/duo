@@ -144,8 +144,6 @@ namespace DuoBondingCurve
 
         private static void ProcessCreateAndBuy(UInt160 buyer, BigInteger gasAmount, object[] data)
         {
-            Enter();
-
             Assert(data.Length >= 10, "INVALID_CREATE_DATA");
 
             BigInteger minTokensOut = 0;
@@ -165,20 +163,13 @@ namespace DuoBondingCurve
 
             UInt160 tokenHash = CreateSaleInternal(name, symbol, totalSupply, decimals, targetRaise, graduationBps, discord, x, telegram, repoUrl, buyer);
 
-            ProcessBuyInternal(buyer, tokenHash, gasAmount, minTokensOut);
-
-            Exit();
+            ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
         }
 
         private static void ProcessBuy(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
         {
             Enter();
-            ProcessBuyInternal(buyer, tokenHash, gasAmount, minTokensOut);
-            Exit();
-        }
 
-        private static void ProcessBuyInternal(UInt160 buyer, UInt160 tokenHash, BigInteger gasAmount, BigInteger minTokensOut)
-        {
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
@@ -225,6 +216,7 @@ namespace DuoBondingCurve
             }
 
             OnTokensPurchased(buyer, tokenHash, tokens, actualGas, sale.TokensSold, sale.GASRaised);
+            Exit();
         }
 
         #endregion
@@ -234,18 +226,16 @@ namespace DuoBondingCurve
         private static void ProcessSell(UInt160 seller, UInt160 tokenHash, BigInteger tokenAmount, BigInteger minGasOut)
         {
             Enter();
+            Assert(tokenAmount > 0, "INVALID_AMOUNT");
 
             SaleInfo sale = GetSale(tokenHash);
-
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
-            //Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
 
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
             BigInteger gasReturn = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
-            // Assert(gasReturn > 0, "ZERO_GAS");
-            // Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
-
+            Assert(gasReturn > 0, "ZERO_GAS");
+            Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
             Assert(gasReturn >= minGasOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold -= tokenAmount;
