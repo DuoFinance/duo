@@ -80,7 +80,7 @@ namespace DuoBondingCurve
             Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
 
             BigInteger twoPminusOne = 2 * graduationBps - 10000;
-            // Assert(twoPminusOne > 0, "INVALID_GRADUATION");
+            Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
             string manifest = BuildImmutableTokenManifest(name, discord, x, telegram, repoUrl);
