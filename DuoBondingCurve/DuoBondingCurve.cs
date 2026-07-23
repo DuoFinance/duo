@@ -8,26 +8,26 @@ namespace DuoBondingCurve
 {
     [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { 
-        "transfer", 
-        "symbol", 
-        "totalSupply", 
-        "initialise", 
-        "getDeployFee", 
-        "getPairHash", 
-        "addLiquidity", 
-        "getReserves", 
-        "mint", 
-        "getReserve0", 
+    [ContractPermission("*", new[] {
+        "transfer",
+        "symbol",
+        "totalSupply",
+        "initialise",
+        "getDeployFee",
+        "getPairHash",
+        "addLiquidity",
+        "getReserves",
+        "mint",
+        "getReserve0",
         "getReserve1" })]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation
 
         public static void CreateSale(
-            string name, 
-            string symbol, 
-            BigInteger targetRaise, 
+            string name,
+            string symbol,
+            BigInteger targetRaise,
             BigInteger graduationBps,
             string discord,
             string x,
@@ -39,16 +39,16 @@ namespace DuoBondingCurve
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
             CreateSaleInternal(
-                name, 
-                symbol, 
-                totalSupply, 
-                decimals, 
-                targetRaise, 
-                graduationBps, 
-                discord, 
-                x, 
-                telegram, 
-                repoUrl, 
+                name,
+                symbol,
+                totalSupply,
+                decimals,
+                targetRaise,
+                graduationBps,
+                discord,
+                x,
+                telegram,
+                repoUrl,
                 Tx.Sender);
             Exit();
         }
@@ -127,7 +127,7 @@ namespace DuoBondingCurve
             if (caller == GAS.Hash)
             {
                 Assert(data != null && data.Length > 0, "INVALID_TRANSFER_DATA");
-                
+
                 if (data[0] is string && (string)data[0] == "CreateAndBuy")
                 {
                     ProcessCreateAndBuy(from, amount, data);
@@ -172,16 +172,16 @@ namespace DuoBondingCurve
             BigInteger decimals = DEFAULT_DECIMALS;
 
             UInt160 tokenHash = CreateSaleInternal(
-                name, 
-                symbol, 
-                totalSupply, 
-                decimals, 
-                targetRaise, 
-                graduationBps, 
-                discord, 
-                x, 
-                telegram, 
-                repoUrl, 
+                name,
+                symbol,
+                totalSupply,
+                decimals,
+                targetRaise,
+                graduationBps,
+                discord,
+                x,
+                telegram,
+                repoUrl,
                 buyer);
 
             ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
@@ -189,8 +189,8 @@ namespace DuoBondingCurve
 
         private static void ProcessBuy(
             UInt160 buyer,
-            UInt160 tokenHash, 
-            BigInteger gasAmount, 
+            UInt160 tokenHash,
+            BigInteger gasAmount,
             BigInteger minTokensOut
             )
         {
@@ -222,15 +222,15 @@ namespace DuoBondingCurve
 
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
+            sale.TokensSold += tokens;
+            sale.GASRaised += actualGas;
+
             bool ok = (bool)Contract.Call(
                 tokenHash,
                 "transfer",
                 CallFlags.All,
                 new object[] { Runtime.ExecutingScriptHash, buyer, tokens, null });
             Assert(ok, "TRANSFER_FAILED");
-
-            sale.TokensSold += tokens;
-            sale.GASRaised += actualGas;
 
             if (sale.GASRaised >= sale.TargetRaise || sale.TokensSold >= maxTokens)
             {
@@ -242,11 +242,11 @@ namespace DuoBondingCurve
             }
 
             OnTokensPurchased(
-                buyer, 
-                tokenHash, 
-                tokens, 
-                actualGas, 
-                sale.TokensSold, 
+                buyer,
+                tokenHash,
+                tokens,
+                actualGas,
+                sale.TokensSold,
                 sale.GASRaised
                 );
             Exit();
@@ -257,9 +257,9 @@ namespace DuoBondingCurve
         #region Selling
 
         private static void ProcessSell(
-            UInt160 seller, 
-            UInt160 tokenHash, 
-            BigInteger tokenAmount, 
+            UInt160 seller,
+            UInt160 tokenHash,
+            BigInteger tokenAmount,
             BigInteger minGasOut)
         {
             Enter();
@@ -283,11 +283,11 @@ namespace DuoBondingCurve
 
             StoreSale(tokenHash, sale);
             OnTokensSold(
-                seller, 
-                tokenHash, 
-                tokenAmount, 
-                gasReturn, 
-                sale.TokensSold, 
+                seller,
+                tokenHash,
+                tokenAmount,
+                gasReturn,
+                sale.TokensSold,
                 sale.GASRaised
                 );
 
@@ -345,10 +345,10 @@ namespace DuoBondingCurve
                     sale.Graduated = true;
                     StoreSale(tokenHash, sale);
                     OnSaleCompleted(
-                        tokenHash, 
-                        pair, 
-                        mintedLiquidity, 
-                        remainingTokens, 
+                        tokenHash,
+                        pair,
+                        mintedLiquidity,
+                        remainingTokens,
                         raisedGAS
                         );
                     return;
