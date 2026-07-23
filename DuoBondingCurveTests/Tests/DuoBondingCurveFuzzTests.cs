@@ -346,7 +346,7 @@ public class DuoBondingCurveFuzzTests
                 current.TokensSold += tokens;
                 current.GASRaised += actualGas;
 
-                if (current.GASRaised >= current.TargetRaise || current.TokensSold >= maxTokens)
+                if (current.TokensSold >= maxTokens)
                     break;
 
                 // Write updated sale back to storage

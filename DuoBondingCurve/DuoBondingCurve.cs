@@ -232,7 +232,8 @@ namespace DuoBondingCurve
                 new object[] { Runtime.ExecutingScriptHash, buyer, tokens, null });
             Assert(ok, "TRANSFER_FAILED");
 
-            if (sale.GASRaised >= sale.TargetRaise || sale.TokensSold >= maxTokens)
+            // Graduation is defined by the configured token allocation cap.
+            if (sale.TokensSold >= maxTokens)
             {
                 FinalizeSale(tokenHash, sale);
             }
