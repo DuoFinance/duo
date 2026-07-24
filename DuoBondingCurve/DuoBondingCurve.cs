@@ -302,6 +302,7 @@ namespace DuoBondingCurve
 
         private static void FinalizeSale(UInt160 tokenHash, SaleInfo sale)
         {
+            Assert(IsEntered(), "NOT_ENTERED");
             UInt160 factory = GetFactory();
             UInt160 router = GetRouter();
             UInt160 self = Runtime.ExecutingScriptHash;
@@ -315,7 +316,7 @@ namespace DuoBondingCurve
                 new object[] { tokenHash, GAS.Hash });
 
             // Anti-sniping: if pair exists with non-zero reserves,
-            // direct-mint LP and burn to zero — attacker gets nothing.
+            // direct-mint LP and burn to zero.
             if (pair.IsValid && !pair.IsZero)
             {
                 BigInteger reserve0 = (BigInteger)Contract.Call(pair, "getReserve0", CallFlags.ReadOnly);
