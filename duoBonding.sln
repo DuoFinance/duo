@@ -15,13 +15,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoToken", "DuoToken\DuoTok
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoStaking", "DuoStaking\DuoStaking.csproj", "{E4B11A2A-E481-461F-B587-48AE38E62950}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoHoneypot", "DuoSwap.Tests\DuoHoneypot\DuoHoneypot.csproj", "{3C8E2B1A-5D4F-4A6E-8B7C-9D0E1F2A3B4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoHoneypot", "tests\DuoSwap.Tests\DuoHoneypot\DuoHoneypot.csproj", "{3C8E2B1A-5D4F-4A6E-8B7C-9D0E1F2A3B4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoSwap.Tests", "DuoSwap.Tests\DuoSwap.Tests.csproj", "{95A077DB-9DD7-48A9-ADF5-8F2173B1B05D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoSwap.Tests", "tests\DuoSwap.Tests\DuoSwap.Tests.csproj", "{95A077DB-9DD7-48A9-ADF5-8F2173B1B05D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoBondingCurve", "DuoBondingCurve\DuoBondingCurve.csproj", "{162FB2E5-26BF-4A2F-9B3D-3D8CC5C72FBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoBondingCurveTests", "DuoBondingCurveTests\DuoBondingCurveTests.csproj", "{0001A372-EC91-48F4-8C21-CFE1B088DFC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuoBondingCurveTests", "tests\DuoBondingCurveTests\DuoBondingCurveTests.csproj", "{0001A372-EC91-48F4-8C21-CFE1B088DFC0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0C37DCE1-79B0-C2BD-53FC-FCC55DA73B1C}"
 EndProject
