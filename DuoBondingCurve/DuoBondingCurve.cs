@@ -115,8 +115,18 @@ namespace DuoBondingCurve
 
         #endregion
 
-        #region Buying
+        #region Transaction Entrance
 
+        /// NEP-17 payment callback — entry point for all buy/sell transactions with 0 fees.
+        ///
+        /// When sending GAS to this contract:
+        ///   data[0] = UInt160 tokenHash    → ProcessBuy
+        ///   data[0] = "CreateAndBuy"       → ProcessCreateAndBuy (create + buy atomically)
+        ///   data[1] = BigInteger minTokensOut (optional, 0 = no slippage)
+        ///
+        /// When sending tokens to this contract:
+        ///   data[0] = BigInteger minGasOut (optional, 0 = no slippage)
+        ///   → ProcessSell
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
             // Mint operations (PostTransfer from null) are a no-op for us
@@ -152,6 +162,13 @@ namespace DuoBondingCurve
             }
         }
 
+        #endregion
+
+        #region Buy
+
+        /// Create a new sale and buy tokens in one atomic transaction.
+        /// data[0] = "CreateAndBuy", data[1] = minTokensOut (optional),
+        /// data[2..9] = name, symbol, targetRaise, graduationBps, discord, x, telegram, repoUrl
         private static void ProcessCreateAndBuy(UInt160 buyer, BigInteger gasAmount, object[] data)
         {
             Assert(data.Length >= 10, "INVALID_CREATE_DATA");
@@ -187,6 +204,9 @@ namespace DuoBondingCurve
             ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
         }
 
+        
+        /// Buy tokens with GAS. If purchase reaches graduation cap,
+        /// triggers FinalizeSale. Excess GAS refunded automatically.
         private static void ProcessBuy(
             UInt160 buyer,
             UInt160 tokenHash,
@@ -257,6 +277,8 @@ namespace DuoBondingCurve
 
         #region Selling
 
+        /// Sell tokens back for GAS via bonding curve.
+        /// GAS sent from contract to seller.
         private static void ProcessSell(
             UInt160 seller,
             UInt160 tokenHash,
@@ -298,6 +320,16 @@ namespace DuoBondingCurve
         #endregion
 
         #region Finalize
+        /// Graduation flow, three paths:
+        ///
+        ///   1. Pair exists with non-zero reserves (anti-sniping):
+        ///       Transfer token+GAS to pair → pair.mint → burn LP to zero address → return
+        ///
+        ///   2. Pair exists with zero reserves (first LP):
+        ///       No deploy fee, router.addLiquidity → burn LP to zero address
+        ///
+        ///   3. Pair does not exist (needs deployment):
+        ///       Deduct deploy fee, deploy pair, router.addLiquidity → burn LP to zero address
         private static void FinalizeSale(UInt160 tokenHash, SaleInfo sale)
         {
             Assert(IsEntered(), "NOT_ENTERED");
