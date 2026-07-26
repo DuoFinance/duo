@@ -298,8 +298,6 @@ namespace DuoBondingCurve
         #endregion
 
         #region Finalize
-        private const int LIQUIDITY_SLIPPAGE_BPS = 200; // 2%
-
         private static void FinalizeSale(UInt160 tokenHash, SaleInfo sale)
         {
             Assert(IsEntered(), "NOT_ENTERED");
@@ -315,8 +313,8 @@ namespace DuoBondingCurve
                 factory, "getPairHash", CallFlags.ReadOnly,
                 new object[] { tokenHash, GAS.Hash });
 
-            // Anti-sniping: if pair exists with non-zero reserves,
-            // direct-mint LP and burn to zero.
+            BigInteger gasForLiquidity;
+
             if (pair.IsValid && !pair.IsZero)
             {
                 BigInteger reserve0 = (BigInteger)Contract.Call(pair, "getReserve0", CallFlags.ReadOnly);
@@ -355,12 +353,7 @@ namespace DuoBondingCurve
                         );
                     return;
                 }
-            }
 
-            BigInteger gasForLiquidity;
-
-            if (pair.IsValid && !pair.IsZero)
-            {
                 gasForLiquidity = raisedGAS;
             }
             else
@@ -382,10 +375,7 @@ namespace DuoBondingCurve
                 Assert(pair.IsValid && !pair.IsZero, "PAIR_NOT_FOUND");
             }
 
-            BigInteger deadline = Runtime.Time + 3600000;
-
-            BigInteger minTokens = remainingTokens * (10000 - LIQUIDITY_SLIPPAGE_BPS) / 10000;
-            BigInteger minGas = gasForLiquidity * (10000 - LIQUIDITY_SLIPPAGE_BPS) / 10000;
+            BigInteger deadline = Runtime.Time + 60000;
 
             SetPendingApproval(tokenHash, pair, remainingTokens);
             SetPendingApproval(GAS.Hash, pair, gasForLiquidity);
@@ -398,8 +388,8 @@ namespace DuoBondingCurve
                     GAS.Hash,
                     remainingTokens,
                     gasForLiquidity,
-                    minTokens,
-                    minGas,
+                    0,
+                    0,
                     deadline
                 });
 
