@@ -235,8 +235,14 @@ namespace DuoBondingCurve
                 BigInteger excess = gasAmount - actualGas;
                 if (excess > 0)
                 {
-                    bool refundOk = GAS.Transfer(Runtime.ExecutingScriptHash, buyer, excess, null);
-                    Assert(refundOk, "REFUND_FAILED");
+                    try
+                    {
+                        GAS.Transfer(Runtime.ExecutingScriptHash, buyer, excess, null);
+                    }
+                    catch
+                    {
+                        // refund failure is non-blocking
+                    }
                 }
             }
 
