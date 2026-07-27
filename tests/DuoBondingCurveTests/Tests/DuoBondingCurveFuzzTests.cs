@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Text;
 using Xunit;
 using Neo;
@@ -43,13 +43,13 @@ public class DuoBondingCurveFuzzTests
         var map = (Map)result;
         return new VmSaleInfo
         {
-            TokensSold = map[(BigInteger)2].GetInteger(),
-            GASRaised = map[(BigInteger)3].GetInteger(),
-            TargetRaise = map[(BigInteger)4].GetInteger(),
-            VirtualGas = map[(BigInteger)5].GetInteger(),
-            VirtualToken = map[(BigInteger)6].GetInteger(),
-            GraduationBps = map[(BigInteger)7].GetInteger(),
-            Graduated = map[(BigInteger)8].GetBoolean(),
+            TokensSold = map[(BigInteger)1].GetInteger(),
+            GASRaised = map[(BigInteger)2].GetInteger(),
+            TargetRaise = map[(BigInteger)3].GetInteger(),
+            VirtualGas = map[(BigInteger)4].GetInteger(),
+            VirtualToken = map[(BigInteger)5].GetInteger(),
+            GraduationBps = map[(BigInteger)6].GetInteger(),
+            Graduated = map[(BigInteger)7].GetBoolean(),
         };
     }
 
@@ -102,15 +102,14 @@ public class DuoBondingCurveFuzzTests
         var vGas = ComputeVGas(targetRaise, graduationBps);
 
         var map = new Map();
-        map[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
-        map[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
+        map[(BigInteger)0] = (ByteString)Owner.GetSpan().ToArray();
+        map[(BigInteger)1] = new Integer(BigInteger.Zero);
         map[(BigInteger)2] = new Integer(BigInteger.Zero);
-        map[(BigInteger)3] = new Integer(BigInteger.Zero);
-        map[(BigInteger)4] = new Integer(targetRaise);
-        map[(BigInteger)5] = new Integer(vGas);
-        map[(BigInteger)6] = new Integer(vToken);
-        map[(BigInteger)7] = new Integer(graduationBps);
-        map[(BigInteger)8] = Boolean.False;
+        map[(BigInteger)3] = new Integer(targetRaise);
+        map[(BigInteger)4] = new Integer(vGas);
+        map[(BigInteger)5] = new Integer(vToken);
+        map[(BigInteger)6] = new Integer(graduationBps);
+        map[(BigInteger)7] = Boolean.False;
 
         byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
         byte[] keyBytes = new byte[24];
@@ -351,15 +350,14 @@ public class DuoBondingCurveFuzzTests
 
                 // Write updated sale back to storage
                 var map = new Map();
-                map[(BigInteger)0] = (ByteString)tokenHash.GetSpan().ToArray();
-                map[(BigInteger)1] = (ByteString)Owner.GetSpan().ToArray();
-                map[(BigInteger)2] = new Integer(current.TokensSold);
-                map[(BigInteger)3] = new Integer(current.GASRaised);
-                map[(BigInteger)4] = new Integer(current.TargetRaise);
-                map[(BigInteger)5] = new Integer(current.VirtualGas);
-                map[(BigInteger)6] = new Integer(current.VirtualToken);
-                map[(BigInteger)7] = new Integer(current.GraduationBps);
-                map[(BigInteger)8] = Boolean.False;
+                map[(BigInteger)0] = (ByteString)Owner.GetSpan().ToArray();
+                map[(BigInteger)1] = new Integer(current.TokensSold);
+                map[(BigInteger)2] = new Integer(current.GASRaised);
+                map[(BigInteger)3] = new Integer(current.TargetRaise);
+                map[(BigInteger)4] = new Integer(current.VirtualGas);
+                map[(BigInteger)5] = new Integer(current.VirtualToken);
+                map[(BigInteger)6] = new Integer(current.GraduationBps);
+                map[(BigInteger)7] = Boolean.False;
 
                 byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
                 WriteSaleStorage(engine, bcId, tokenHash, serializedSale);

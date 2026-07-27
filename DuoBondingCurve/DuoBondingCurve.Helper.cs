@@ -29,7 +29,7 @@ namespace DuoBondingCurve
 
         private static bool SaleExists(SaleInfo sale)
         {
-            return sale.TokenHash.IsValid && !sale.TokenHash.IsZero;
+            return sale.Creator.IsValid && !sale.Creator.IsZero;
         }
 
         [Safe]
@@ -97,9 +97,18 @@ namespace DuoBondingCurve
             Assert(gasAmount > 0, "INVALID_AMOUNT");
             var sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
+
+            UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
+            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+            BigInteger netGas = gasAmount;
+            if (feeOn)
+            {
+                netGas = gasAmount - (gasAmount * 3 / 1000);
+            }
+
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            BigInteger tokensOut = GetAmountOut(gasReserve, tokenReserve, gasAmount);
+            BigInteger tokensOut = GetAmountOut(gasReserve, tokenReserve, netGas);
             BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
             BigInteger remaining = maxTokens - sale.TokensSold;
             return tokensOut > remaining ? remaining : tokensOut;
@@ -115,7 +124,15 @@ namespace DuoBondingCurve
             Assert(sale.TokensSold >= tokenAmount, "INSUFFICIENT_SOLD");
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            return GetAmountOut(tokenReserve, gasReserve, tokenAmount);
+            BigInteger grossGas = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
+
+            UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
+            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+            if (feeOn)
+            {
+                return grossGas - (grossGas * 3 / 1000);
+            }
+            return grossGas;
         }
 
         #endregion
@@ -331,7 +348,6 @@ namespace DuoBondingCurve
 
     public struct SaleInfo
     {
-        public UInt160 TokenHash;
         public UInt160 Creator;
         public BigInteger TokensSold;
         public BigInteger GASRaised;

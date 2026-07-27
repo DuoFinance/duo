@@ -19,7 +19,8 @@ namespace DuoBondingCurve
         "getReserves",
         "mint",
         "getReserve0",
-        "getReserve1" })]
+        "getReserve1",
+        "getFeeTo" })]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation
@@ -97,7 +98,6 @@ namespace DuoBondingCurve
 
             SaleInfo info = new SaleInfo
             {
-                TokenHash = tokenHash,
                 Creator = creator,
                 TokensSold = 0,
                 GASRaised = 0,
@@ -219,18 +219,44 @@ namespace DuoBondingCurve
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
+            UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
+            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+
+            BigInteger fee = 0;
+            BigInteger netGasAmount = gasAmount;
+            if (feeOn)
+            {
+                fee = gasAmount * 3 / 1000;
+                netGasAmount = gasAmount - fee;
+            }
+
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
-            BigInteger tokens = GetAmountOut(gasReserve, tokenReserve, gasAmount);
+            BigInteger tokens = GetAmountOut(gasReserve, tokenReserve, netGasAmount);
 
             BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
             BigInteger remainingToGrad = maxTokens - sale.TokensSold;
             BigInteger actualGas = gasAmount;
+            BigInteger curveGas = netGasAmount;
+
             if (tokens >= remainingToGrad)
             {
                 tokens = remainingToGrad;
-                actualGas = GetAmountIn(sale, tokens);
-                if (actualGas > gasAmount) actualGas = gasAmount;
+                BigInteger netActualGas = GetAmountIn(sale, tokens);
+                if (netActualGas > netGasAmount) netActualGas = netGasAmount;
+
+                if (feeOn)
+                {
+                    actualGas = (netActualGas * 1000 + 996) / 997;
+                    if (actualGas > gasAmount) actualGas = gasAmount;
+                    fee = actualGas * 3 / 1000;
+                    curveGas = actualGas - fee;
+                }
+                else
+                {
+                    actualGas = netActualGas;
+                    curveGas = netActualGas;
+                }
 
                 BigInteger excess = gasAmount - actualGas;
                 if (excess > 0)
@@ -249,7 +275,7 @@ namespace DuoBondingCurve
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold += tokens;
-            sale.GASRaised += actualGas;
+            sale.GASRaised += curveGas;
 
             bool ok = (bool)Contract.Call(
                 tokenHash,
@@ -257,6 +283,12 @@ namespace DuoBondingCurve
                 CallFlags.All,
                 new object[] { Runtime.ExecutingScriptHash, buyer, tokens, null });
             Assert(ok, "TRANSFER_FAILED");
+
+            if (feeOn && fee > 0)
+            {
+                bool feeOk = GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
+                Assert(feeOk, "FEE_TRANSFER_FAILED");
+            }
 
             // Graduation is defined by the configured token allocation cap.
             if (sale.TokensSold >= maxTokens)
@@ -297,17 +329,34 @@ namespace DuoBondingCurve
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
+            UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
+            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
             BigInteger gasReturn = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
             Assert(gasReturn > 0, "ZERO_GAS");
             Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
-            Assert(gasReturn >= minGasOut, "SLIPPAGE_EXCEEDED");
+
+            BigInteger fee = 0;
+            BigInteger userGas = gasReturn;
+            if (feeOn)
+            {
+                fee = gasReturn * 3 / 1000;
+                userGas = gasReturn - fee;
+            }
+            Assert(userGas >= minGasOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold -= tokenAmount;
             sale.GASRaised -= gasReturn;
 
-            bool ok = GAS.Transfer(Runtime.ExecutingScriptHash, seller, gasReturn, null);
+            if (feeOn && fee > 0)
+            {
+                bool feeOk = GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
+                Assert(feeOk, "FEE_TRANSFER_FAILED");
+            }
+
+            bool ok = GAS.Transfer(Runtime.ExecutingScriptHash, seller, userGas, null);
             Assert(ok, "GAS_TRANSFER_FAILED");
 
             StoreSale(tokenHash, sale);

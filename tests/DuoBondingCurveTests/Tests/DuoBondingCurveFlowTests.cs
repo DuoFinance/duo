@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Text;
 using Xunit;
 using Neo;
@@ -93,6 +93,48 @@ public class DuoBondingCurveFlowTests
 
         var saleAfter = getSale(engine, bondingCurve, tokenHash);
         Assert.Equal(BigInteger.Zero, saleAfter.TokensSold);
+    }
+
+    [Fact]
+    public void Flow_BuyAndSell_WithFee()
+    {
+        var (engine, factory, router, bondingCurve) = Setup();
+        var gas = engine.Native.GAS.Hash;
+
+        // Set feeTo to a non-zero address Kiwi
+        var feeTo = UInt160.Parse("0x0000000000000000000000000000000000000008");
+        Invoke(engine, factory, "setFeeTo", feeTo);
+
+        var tokenHash = SetupSale(engine, factory, router, bondingCurve,
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+
+        BigInteger buyGas = 10_000_000_000;
+        var gasBeforeBuy = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        var treasuryBeforeBuy = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, buyGas);
+
+        var tokenBalance = Invoke(engine, tokenHash, "balanceOf", Owner).GetInteger();
+        Assert.True(tokenBalance > 0);
+
+        var gasAfterBuy = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        var treasuryAfterBuy = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+
+        BigInteger expectedBuyFee = buyGas * 3 / 1000;
+        Assert.Equal(expectedBuyFee, treasuryAfterBuy - treasuryBeforeBuy);
+        Assert.Equal(buyGas, gasBeforeBuy - gasAfterBuy);
+
+        // Sell tokens back
+        BigInteger expectedGasOut = Invoke(engine, bondingCurve, "getGASForTokens", tokenHash, tokenBalance).GetInteger();
+
+        SellTokens(engine, bondingCurve, tokenHash, Owner, tokenBalance);
+
+        var gasAfterSell = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        var treasuryAfterSell = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+
+        Assert.Equal(expectedGasOut, gasAfterSell - gasAfterBuy);
+        Assert.True(treasuryAfterSell > treasuryAfterBuy, "Treasury should receive sell fee");
+        Assert.Equal(BigInteger.Zero, Invoke(engine, tokenHash, "balanceOf", Owner).GetInteger());
     }
 
     [Fact]
@@ -218,15 +260,14 @@ public class DuoBondingCurveFlowTests
         BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
 
         var map = new Map();
-        map[(BigInteger)0] = (Neo.VM.Types.ByteString)tokenHash.GetSpan().ToArray();
-        map[(BigInteger)1] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
+        map[(BigInteger)0] = (Neo.VM.Types.ByteString)Owner.GetSpan().ToArray();
+        map[(BigInteger)1] = new Integer(BigInteger.Zero);
         map[(BigInteger)2] = new Integer(BigInteger.Zero);
-        map[(BigInteger)3] = new Integer(BigInteger.Zero);
-        map[(BigInteger)4] = new Integer(targetRaise);
-        map[(BigInteger)5] = new Integer(vGas);
-        map[(BigInteger)6] = new Integer(vToken);
-        map[(BigInteger)7] = new Integer(graduationBps);
-        map[(BigInteger)8] = Neo.VM.Types.Boolean.False;
+        map[(BigInteger)3] = new Integer(targetRaise);
+        map[(BigInteger)4] = new Integer(vGas);
+        map[(BigInteger)5] = new Integer(vToken);
+        map[(BigInteger)6] = new Integer(graduationBps);
+        map[(BigInteger)7] = Neo.VM.Types.Boolean.False;
 
         byte[] serializedSale = BinarySerializer.Serialize(map, new ExecutionEngineLimits());
 
@@ -280,14 +321,13 @@ public class DuoBondingCurveFlowTests
         var map = (Neo.VM.Types.Map)result;
         return new SaleInfo
         {
-            TokenHash = tokenHash,
-            TokensSold = map[(BigInteger)2].GetInteger(),
-            GASRaised = map[(BigInteger)3].GetInteger(),
-            TargetRaise = map[(BigInteger)4].GetInteger(),
-            VirtualGas = map[(BigInteger)5].GetInteger(),
-            VirtualToken = map[(BigInteger)6].GetInteger(),
-            GraduationBps = map[(BigInteger)7].GetInteger(),
-            Graduated = map[(BigInteger)8].GetBoolean()
+            TokensSold = map[(BigInteger)1].GetInteger(),
+            GASRaised = map[(BigInteger)2].GetInteger(),
+            TargetRaise = map[(BigInteger)3].GetInteger(),
+            VirtualGas = map[(BigInteger)4].GetInteger(),
+            VirtualToken = map[(BigInteger)5].GetInteger(),
+            GraduationBps = map[(BigInteger)6].GetInteger(),
+            Graduated = map[(BigInteger)7].GetBoolean()
         };
     }
 
@@ -312,7 +352,6 @@ public class DuoBondingCurveFlowTests
 
     private struct SaleInfo
     {
-        public UInt160 TokenHash;
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;
