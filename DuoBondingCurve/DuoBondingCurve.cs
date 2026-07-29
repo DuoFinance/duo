@@ -226,7 +226,7 @@ namespace DuoBondingCurve
             BigInteger netGasAmount = gasAmount;
             if (feeOn)
             {
-                fee = gasAmount * 3 / 1000;
+                fee = gasAmount * FEE_FACTOR / FEE_DENOMINATOR;
                 netGasAmount = gasAmount - fee;
             }
 
@@ -247,9 +247,9 @@ namespace DuoBondingCurve
 
                 if (feeOn)
                 {
-                    actualGas = (netActualGas * 1000 + 996) / 997;
+                    actualGas = (netActualGas * FEE_DENOMINATOR + (FEE_DENOMINATOR - FEE_FACTOR - 1)) / (FEE_DENOMINATOR - FEE_FACTOR);
                     if (actualGas > gasAmount) actualGas = gasAmount;
-                    fee = actualGas * 3 / 1000;
+                    fee = actualGas * FEE_FACTOR / FEE_DENOMINATOR;
                     curveGas = actualGas - fee;
                 }
                 else
@@ -342,7 +342,7 @@ namespace DuoBondingCurve
             BigInteger userGas = gasReturn;
             if (feeOn)
             {
-                fee = gasReturn * 3 / 1000;
+                fee = gasReturn * FEE_FACTOR / FEE_DENOMINATOR;
                 userGas = gasReturn - fee;
             }
             Assert(userGas >= minGasOut, "SLIPPAGE_EXCEEDED");

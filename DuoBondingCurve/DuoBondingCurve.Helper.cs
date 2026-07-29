@@ -15,6 +15,8 @@ namespace DuoBondingCurve
 
         private static readonly BigInteger DEFAULT_TOTAL_SUPPLY = 100000000000000000; // fixed at 1 B
         private const byte DEFAULT_DECIMALS = 8; // fixed to 8 decimals
+        private const long FEE_FACTOR = 3;
+        private const long FEE_DENOMINATOR = 10000;
 
         private static Transaction Tx => (Transaction)Runtime.Transaction;
 
@@ -103,7 +105,7 @@ namespace DuoBondingCurve
             BigInteger netGas = gasAmount;
             if (feeOn)
             {
-                netGas = gasAmount - (gasAmount * 3 / 1000);
+                netGas = gasAmount - (gasAmount * FEE_FACTOR / FEE_DENOMINATOR);
             }
 
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
@@ -130,7 +132,7 @@ namespace DuoBondingCurve
             bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
             if (feeOn)
             {
-                return grossGas - (grossGas * 3 / 1000);
+                return grossGas - (grossGas * FEE_FACTOR / FEE_DENOMINATOR);
             }
             return grossGas;
         }

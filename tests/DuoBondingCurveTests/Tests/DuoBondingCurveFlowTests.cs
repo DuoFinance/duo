@@ -120,7 +120,7 @@ public class DuoBondingCurveFlowTests
         var gasAfterBuy = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
         var treasuryAfterBuy = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
 
-        BigInteger expectedBuyFee = buyGas * 3 / 1000;
+        BigInteger expectedBuyFee = buyGas * 3 / 10000;
         Assert.Equal(expectedBuyFee, treasuryAfterBuy - treasuryBeforeBuy);
         Assert.Equal(buyGas, gasBeforeBuy - gasAfterBuy);
 
