@@ -86,6 +86,7 @@ namespace DuoBondingCurve
             byte[] nef = GetLaunchpadNef();
             string manifest = BuildImmutableTokenManifest(name, discord, x, telegram, repoUrl);
             Contract newContract = ContractManagement.Deploy(nef.ToByteString(), manifest);
+            Assert(newContract.Hash.IsValid && !newContract.Hash.IsZero, "TOKEN_DEPLOY_FAILED");
             UInt160 tokenHash = newContract.Hash;
 
             Contract.Call(tokenHash, "initialise", CallFlags.All,
@@ -445,11 +446,10 @@ namespace DuoBondingCurve
             }
             else
             {
-                var minimumDeploymentFee = (long)ContractManagement.GetMinimumDeploymentFee();
                 var pair_DeployFee = (BigInteger)Contract.Call(factory, "getDeployFee", CallFlags.ReadOnly);
 
-                Assert(raisedGAS > minimumDeploymentFee + pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
-                gasForLiquidity = raisedGAS - minimumDeploymentFee - pair_DeployFee;
+                Assert(raisedGAS > pair_DeployFee, "INSUFFICIENT_FOR_DEPLOY");
+                gasForLiquidity = raisedGAS - pair_DeployFee;
 
                 bool deployed = GAS.Transfer(
                     Runtime.ExecutingScriptHash, factory, pair_DeployFee,

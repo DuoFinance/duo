@@ -40,7 +40,9 @@ namespace DuoSwapFactory
             Assert(router != UInt160.Zero, "Router Not Set.");
 
             var sa = (string)Contract.Call(tokenA, "symbol", CallFlags.ReadOnly);
+            Assert(sa != null && sa.Length > 0, "INVALID_TOKEN_A_SYMBOL");
             var sb = (string)Contract.Call(tokenB, "symbol", CallFlags.ReadOnly);
+            Assert(sb != null && sb.Length > 0, "INVALID_TOKEN_B_SYMBOL");
             string pairSymbol = (tokenA == GAS.Hash) ? (sb + "-" + sa) : (sa + "-" + sb);
 
             string pairName = "Pair-" + pairSymbol;
@@ -306,6 +308,7 @@ namespace DuoSwapFactory
                 nef.ToByteString(),
                 manifest,
                 new object[] { Runtime.ExecutingScriptHash });
+            Assert(pairContract.Hash.IsValid && !pairContract.Hash.IsZero, "PAIR_DEPLOY_FAILED");
             Contract.Call(
                 pairContract.Hash,
                 "initialisePair",
