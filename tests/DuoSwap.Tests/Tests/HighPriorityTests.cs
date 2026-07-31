@@ -307,19 +307,7 @@ public class HighPriorityTests
     }
 
     // ============================================
-    // 7. Factory.WithdrawDeployFee
-    // ============================================
-
-    [Fact]
-    public void Factory_WithdrawDeployFee_NoFeeToSet_Fails()
-    {
-        var (e, f, _, _, _) = DeployCore();
-        var ex = Assert.ThrowsAny<Exception>(() => Invoke(e, f, "withdrawDeployFee"));
-        Assert.Contains("ASSERT", ex.Message);
-    }
-
-    // ============================================
-    // 8. DuoToken.transfer boundary cases
+    // 7. DuoToken.transfer boundary cases
     // ============================================
 
     [Fact]

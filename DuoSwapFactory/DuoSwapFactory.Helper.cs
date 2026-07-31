@@ -60,7 +60,7 @@ namespace DuoSwapFactory
 
         public static bool SetFeeTo(UInt160 feeTo)
         {
-            Assert(feeTo.IsAddress(), "Invalid Address.");
+            Assert(feeTo.IsValid, "Invalid Address.");
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
             StoragePut(FEETO_KEY, feeTo);
             onSetFeeTo(feeTo);
@@ -109,8 +109,9 @@ namespace DuoSwapFactory
 
         public static void SetRouter(UInt160 router)
         {
+            Assert(router.IsAddress(), "Invalid Router.");
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-            Assert(router != null && router.IsValid && !router.IsZero, "Invalid Router.");
+            Assert(GetRouter().IsZero, "ALREADY_SET_IMMUTABLE");
             Storage.Put(Storage.CurrentContext, ROUTER_KEY, router);
             onSetRouter(router);
         }
@@ -126,8 +127,9 @@ namespace DuoSwapFactory
 
         public static void SetBonding(UInt160 bonding)
         {
+            Assert(bonding.IsAddress(), "Invalid Bonding.");
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-            Assert(bonding != null && bonding.IsValid && !bonding.IsZero, "Invalid Bonding.");
+            Assert(GetBonding().IsZero, "ALREADY_SET_IMMUTABLE");
             Storage.Put(Storage.CurrentContext, BONDING_KEY, bonding);
             onSetBonding(bonding);
         }

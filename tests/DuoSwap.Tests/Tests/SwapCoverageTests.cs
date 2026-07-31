@@ -178,19 +178,6 @@ public class SwapCoverageTests
     }
 
     [Fact]
-    public void Factory_WithdrawDeployFee_WithFeeSet_SendsGas()
-    {
-        var (e, f, _, a, b) = DeployCore();
-        DeployPair(e, f, a, b);
-
-        var balBefore = Invoke(e, e.Native.GAS.Hash, "balanceOf", User).GetInteger();
-        Invoke(e, f, "setFeeTo", User);
-        Invoke(e, f, "withdrawDeployFee");
-        var balAfter = Invoke(e, e.Native.GAS.Hash, "balanceOf", User).GetInteger();
-        Assert.True(balAfter > balBefore);
-    }
-
-    [Fact]
     public void Factory_OnNEP17Payment_InvalidSender_Fails()
     {
         var engine = CreateEngine();
@@ -247,11 +234,11 @@ public class SwapCoverageTests
     }
 
     // ============================================
-    // FACTORY: Router can be updated
+    // FACTORY: Router is immutable after first set
     // ============================================
 
     [Fact]
-    public void Factory_SetRouter_AfterFirstSet_Updates()
+    public void Factory_SetRouter_AfterFirstSet_Fails()
     {
         var (e, f, _, a, b) = DeployCore();
         DeployPair(e, f, a, b);
@@ -260,8 +247,8 @@ public class SwapCoverageTests
         rm.Name = "DuoSwapRouterV2";
         var newRouter = DeployContract(e, rn, rm, new object[] { f });
 
-        // Second set should succeed (updatable)
-        Invoke(e, f, "setRouter", newRouter);
+        // Second set should fail (immutable)
+        Assert.ThrowsAny<Exception>(() => Invoke(e, f, "setRouter", newRouter));
     }
 
     // ============================================

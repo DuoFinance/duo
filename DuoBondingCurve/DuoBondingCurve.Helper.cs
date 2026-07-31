@@ -101,7 +101,7 @@ namespace DuoBondingCurve
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
 
             UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
-            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+            bool feeOn = feeTo != UInt160.Zero;
             BigInteger netGas = gasAmount;
             if (feeOn)
             {
@@ -129,7 +129,7 @@ namespace DuoBondingCurve
             BigInteger grossGas = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
 
             UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
-            bool feeOn = feeTo != UInt160.Zero && feeTo.IsValid;
+            bool feeOn = feeTo != UInt160.Zero;
             if (feeOn)
             {
                 return grossGas - (grossGas * FEE_FACTOR / FEE_DENOMINATOR);

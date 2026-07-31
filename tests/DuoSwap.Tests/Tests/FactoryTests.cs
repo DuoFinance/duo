@@ -160,7 +160,7 @@ public class FactoryTests
     }
 
     [Fact]
-    public void SetRouter_CanBeUpdated()
+    public void SetRouter_IsImmutable()
     {
         var engine = CreateEngine();
         var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
@@ -171,7 +171,7 @@ public class FactoryTests
 
         Invoke(engine, factoryHash, "setRouter", routerHash);
 
-        // Second set should succeed (updatable)
-        Invoke(engine, factoryHash, "setRouter", routerHash);
+        // Second set should fail (immutable)
+        Assert.ThrowsAny<Exception>(() => Invoke(engine, factoryHash, "setRouter", routerHash));
     }
 }
