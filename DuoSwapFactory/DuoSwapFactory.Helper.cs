@@ -71,29 +71,31 @@ namespace DuoSwapFactory
         #region DeployFee
         public static BigInteger GetDeployFee() => ContractManagement.GetMinimumDeploymentFee() / 100;
 
-        public static bool WithdrawDeployFee()
+        /// <summary>
+        /// Auto-transfer deployFee to feeTo when feeTo is set.
+        /// Called internally after receiving deploy fee.
+        /// </summary>
+        private static void TransferDeployFee()
         {
-            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-
             UInt160 feeTo = GetFeeTo();
-            Assert(feeTo.IsAddress(), "FeeTo Not Set.");
+            if (!feeTo.IsAddress()) return; // feeTo not set, keep in contract
 
             BigInteger balance = (BigInteger)Contract.Call(
                 GAS.Hash,
                 "balanceOf",
                 CallFlags.ReadOnly,
                 new object[] { Runtime.ExecutingScriptHash });
-            Assert(balance > 0, "Insufficient Balance.");
+            
+            if (balance <= 0) return;
 
             bool result = (bool)Contract.Call(
                 GAS.Hash,
                 "transfer",
                 CallFlags.All,
                 new object[] { Runtime.ExecutingScriptHash, feeTo, balance, null });
-            Assert(result, "Withdraw Failed.");
+            Assert(result, "Transfer Fee Failed.");
 
             onWithdrawFee(feeTo, balance);
-            return true;
         }
         #endregion
 

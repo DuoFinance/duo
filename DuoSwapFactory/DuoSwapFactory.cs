@@ -16,6 +16,7 @@ namespace DuoSwapFactory
 
         /// <summary>
         /// Trading pair deployment procceeds once this contract receive the deployFee in GAS from users.
+        /// When feeTo is set, deployFee is auto-transferred to feeTo address.
         /// </summary>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
@@ -27,6 +28,9 @@ namespace DuoSwapFactory
             DeployPair(
                 (UInt160)data[0],
                 (UInt160)data[1]);
+
+            // Auto-transfer deployFee to feeTo if set
+            TransferDeployFee();
         }
 
         /// <summary>
