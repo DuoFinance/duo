@@ -25,6 +25,7 @@ public class SwapCoverageTests
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
         Invoke(engine, factory, "setRouter", router);
+        Invoke(engine, factory, "setBonding", Bonding);
 
         var (tn, tma) = LoadContract("DuoToken");
         tma.Name = "DuoTokenA";
@@ -102,17 +103,21 @@ public class SwapCoverageTests
     }
 
     [Fact]
-    public void Pair_InitialisePair_NonFactoryCaller_Fails()
+    public void Pair_ExternalDeployCall_DoesNotResetState()
     {
-        var (e, f, _, _, _) = DeployCore();
+        var (e, f, r, a, b) = DeployCore();
+        var p = DeployPair(e, f, a, b);
 
-        var (pairNef, pairManifest) = LoadContract("DuoSwapPair");
-        var pair = DeployContract(e, pairNef, pairManifest, new object[] { f });
+        var attacker = new UInt160(new byte[] { 0x0e, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        e.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
 
-        var gas = e.Native.GAS.Hash;
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(e, pair, "initialisePair", gas, gas, "TEST", Owner, UInt160.Zero));
-        Assert.Contains("ASSERT", ex.Message);
+        Assert.ThrowsAny<Exception>(() =>
+            Invoke(e, p, "_deploy",
+                new object[] { attacker, attacker, attacker, a, b, "HACKED" }, false));
+
+        Assert.Equal(r, new UInt160(Invoke(e, p, "getRouter").GetSpan()));
+        Assert.Equal(Bonding, new UInt160(Invoke(e, p, "getBonding").GetSpan()));
+        Assert.Equal(f, new UInt160(Invoke(e, p, "getFactory").GetSpan()));
     }
 
     [Fact]

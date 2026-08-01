@@ -29,6 +29,7 @@ public class DuoSwapIntegrationTests
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
         Invoke(engine, factory, "setRouter", router);
+        Invoke(engine, factory, "setBonding", Bonding);
 
         var (tn, tma) = LoadContract("DuoToken");
         tma.Name = "DuoTokenA";

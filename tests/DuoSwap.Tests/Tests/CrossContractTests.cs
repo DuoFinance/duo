@@ -247,6 +247,7 @@ public class CrossContractTests
         var (routerNef, routerManifest) = LoadContract("DuoSwapRouter");
         var routerHash = DeployContract(engine, routerNef, routerManifest, new object[] { factoryHash });
         Invoke(engine, factoryHash, "setRouter", routerHash);
+        Invoke(engine, factoryHash, "setBonding", Bonding);
 
         var (tokenNef, tokenManifestA) = LoadContract("DuoToken");
         tokenManifestA.Name = "DuoTokenA";

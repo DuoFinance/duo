@@ -22,6 +22,7 @@ public class DuoSwapFactoryTests
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
         Invoke(engine, factory, "setRouter", router);
+        Invoke(engine, factory, "setBonding", Bonding);
 
         var (tn, tma) = LoadContract("DuoToken");
         tma.Name = "DuoTokenA";
@@ -261,7 +262,11 @@ public class DuoSwapFactoryTests
     [Fact]
     public void Factory_GetBonding_ReturnsZeroInitially()
     {
-        var (engine, factory, _, _, _) = DeployCore();
+        var engine = CreateEngine();
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (fn, fm) = LoadContract("DuoSwapFactory");
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var result = Invoke(engine, factory, "getBonding");
         var bonding = result.GetSpan();
@@ -271,7 +276,11 @@ public class DuoSwapFactoryTests
     [Fact]
     public void Factory_SetBonding_IsImmutable()
     {
-        var (engine, factory, _, _, _) = DeployCore();
+        var engine = CreateEngine();
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var (fn, fm) = LoadContract("DuoSwapFactory");
+        var factory = DeployContract(engine, fn, fm, Owner);
 
         var bondingAddr = new UInt160(new byte[] { 0x0a, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
         Invoke(engine, factory, "setBonding", bondingAddr);

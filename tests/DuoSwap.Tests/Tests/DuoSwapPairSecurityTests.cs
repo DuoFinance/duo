@@ -57,20 +57,39 @@ public class DuoSwapPairSecurityTests
     }
 
     [Fact]
-    public void Security_InitialisePair_OnlyFactory_CanCall()
+    public void Security_PairDeploy_SetsAllInitState()
     {
         var (engine, factory, router, tokenA, tokenB) = DeployCore();
+        var pair = DeployPair(engine, factory, tokenA, tokenB);
 
-        var (pairNef, pairManifest) = LoadContract("DuoSwapPair");
-        var pair = DeployContract(engine, pairNef, pairManifest, new object[] { factory });
+        Assert.Equal(factory, new UInt160(Invoke(engine, pair, "getFactory").GetSpan()));
+        Assert.Equal(router, new UInt160(Invoke(engine, pair, "getRouter").GetSpan()));
+        Assert.Equal(Bonding, new UInt160(Invoke(engine, pair, "getBonding").GetSpan()));
+    }
 
-        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
-        
-        var ex = Assert.ThrowsAny<Exception>(() =>
+    [Fact]
+    public void Security_ExternalDeployCall_CannotOverwriteInitState()
+    {
+        var (engine, factory, router, tokenA, tokenB) = DeployCore();
+        var pair = DeployPair(engine, factory, tokenA, tokenB);
+
+        Assert.Equal(factory, new UInt160(Invoke(engine, pair, "getFactory").GetSpan()));
+        Assert.Equal(router, new UInt160(Invoke(engine, pair, "getRouter").GetSpan()));
+        Assert.Equal(Bonding, new UInt160(Invoke(engine, pair, "getBonding").GetSpan()));
+
+        var attacker = new UInt160(new byte[] { 0x0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
+
+        Assert.ThrowsAny<Exception>(() =>
         {
-            Invoke(engine, pair, "initialisePair", tokenA, tokenB, "TEST-PAIR", router, UInt160.Zero);
+            Invoke(engine, pair, "_deploy",
+                new object[] { attacker, attacker, attacker, tokenA, tokenB, "HACKED" },
+                false);
         });
-        Assert.Contains("ASSERT", ex.Message);
+
+        Assert.Equal(factory, new UInt160(Invoke(engine, pair, "getFactory").GetSpan()));
+        Assert.Equal(router, new UInt160(Invoke(engine, pair, "getRouter").GetSpan()));
+        Assert.Equal(Bonding, new UInt160(Invoke(engine, pair, "getBonding").GetSpan()));
     }
 
     [Fact]
@@ -203,6 +222,7 @@ public class DuoSwapPairSecurityTests
         var (rn, rm) = LoadContract("DuoSwapRouter");
         var router = DeployContract(engine, rn, rm, new object[] { factory });
         Invoke(engine, factory, "setRouter", router);
+        Invoke(engine, factory, "setBonding", Bonding);
 
         var (tn, tma) = LoadContract("DuoToken");
         tma.Name = "DuoTokenA";

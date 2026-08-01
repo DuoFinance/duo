@@ -118,7 +118,7 @@ namespace DuoBondingCurve
 
         #region Transaction Entrance
 
-        /// NEP-17 payment callback — entry point for all buy/sell transactions with 0 fees.
+        /// NEP-17 payment callback — entry point for all buy/sell transactions.
         ///
         /// When sending GAS to this contract:
         ///   data[0] = UInt160 tokenHash    → ProcessBuy
@@ -130,7 +130,6 @@ namespace DuoBondingCurve
         ///   → ProcessSell
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
-            // Mint operations (PostTransfer from null) are a no-op for us
             if (!from.IsValid || from.IsZero) return;
             Assert(amount > 0, "INVALID_AMOUNT");
 

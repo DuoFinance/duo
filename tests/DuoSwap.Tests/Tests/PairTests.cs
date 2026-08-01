@@ -33,7 +33,8 @@ public class PairTests
         Invoke(_engine, _factoryHash, "setRouter", _routerHash);
 
         var (pairNef, pairManifest) = LoadContract("DuoSwapPair");
-        _pairHash = DeployContract(_engine, pairNef, pairManifest, new object[] { _factoryHash });
+        _pairHash = DeployContract(_engine, pairNef, pairManifest,
+            new object[] { _factoryHash, _routerHash, Bonding, _tokenA, _tokenB, "TEST-PAIR" });
     }
 
     [Fact]
@@ -127,10 +128,10 @@ public class PairTests
     }
 
     [Fact]
-    public void Pair_GetRouter_InitiallyZero()
+    public void Pair_GetRouter_ReturnsRouter()
     {
         var result = Invoke(_engine, _pairHash, "getRouter");
-        Assert.NotNull(result);
+        Assert.Equal(_routerHash, new UInt160(result.GetSpan()));
     }
 
     [Fact]
@@ -156,9 +157,9 @@ public class PairTests
     }
 
     [Fact]
-    public void Pair_GetBonding_ReturnsZeroByDefault()
+    public void Pair_GetBonding_ReturnsBonding()
     {
         var result = Invoke(_engine, _pairHash, "getBonding");
-        Assert.Equal(UInt160.Zero, new UInt160(result.GetSpan()));
+        Assert.Equal(Bonding, new UInt160(result.GetSpan()));
     }
 }

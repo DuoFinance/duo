@@ -15,42 +15,44 @@ namespace DuoSwapPair
         private const string ROUTER_KEY = "Router";
         private const string BONDING_KEY = "Bonding";
         private const string SYMBOL_KEY = "Symbol";
-        private const string INIT_KEY = "Init";
         private const string KLAST_KEY = "KLast";
         #endregion
 
         #region Init & Deployment
         /// <summary>
         /// Deployment, the contract is not upgradable.
+        /// data = { factory, router, bonding, tokenA, tokenB, pairSymbol }
+        /// All pair initialization happens atomically inside _deploy (invoked by
+        /// ContractManagement during Deploy), so there is no external init call
+        /// and no window where the pair exists uninitialized.
         /// </summary>
         public static void _deploy(object data, bool update)
         {
             Assert(!update, "Not Upgradable.");
             Assert(data != null, "Invalid Data.");
             object[] args = (object[])data;
-            Assert(args.Length == 1, "Invalid Data.");
+            Assert(args.Length == 6, "Invalid Data.");
+
             UInt160 factory = (UInt160)args[0];
-            Assert(factory.IsValid && !factory.IsZero, "Invalid Factory.");
+            Assert(factory.IsAddress(), "Invalid Factory.");
             Storage.Put(FACTORY_KEY, factory);
 
-            StoragePut(INIT_KEY, 0);
-        }
+            UInt160 router = (UInt160)args[1];
+            Assert(router.IsAddress(), "Invalid Router.");
+            Storage.Put(ROUTER_KEY, router);
 
-        /// <summary>
-        /// Initialize the pair info, only can be called once by factory after the pair is deployed.
-        /// </summary>
-        public static void InitialisePair(UInt160 tokenA, UInt160 tokenB, string pairSymbol, UInt160 Router, UInt160 Bonding)
-        {
-            BigInteger initialised = (BigInteger)StorageGet(INIT_KEY);
-            Assert(initialised == 0, "Forbidden.");
-            Assert(Runtime.CallingScriptHash == GetFactory(), "Forbidden.");
+            UInt160 bonding = (UInt160)args[2];
+            Assert(bonding.IsAddress(), "Invalid Bonding.");
+            Storage.Put(BONDING_KEY, bonding);
+
+            UInt160 tokenA = (UInt160)args[3];
+            UInt160 tokenB = (UInt160)args[4];
             Assert(tokenA.IsAddress() && tokenB.IsAddress(), "Invalid Token.");
             Assert(tokenA != tokenB, "Identical Tokens.");
-            Assert(Router.IsAddress(), "Invalid Router.");
+
+            string pairSymbol = (string)args[5];
             Assert(pairSymbol != null && pairSymbol.Length > 0, "Invalid Symbol.");
             Storage.Put(SYMBOL_KEY, pairSymbol);
-            Storage.Put(ROUTER_KEY, Router);
-            Storage.Put(BONDING_KEY, Bonding);
 
             if (tokenA.ToUInteger() < tokenB.ToUInteger())
             {
@@ -64,7 +66,6 @@ namespace DuoSwapPair
             }
 
             PairDeployed(Token0, Token1);
-            StoragePut(INIT_KEY, 1);
         }
         #endregion
 

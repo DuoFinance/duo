@@ -16,6 +16,7 @@ public static class TestUtils
     public static readonly UInt160 Owner = UInt160.Parse("0x0000000000000000000000000000000000000002");
     public static readonly UInt160 User = UInt160.Parse("0x0000000000000000000000000000000000000003");
     public static readonly UInt160 Treasury = UInt160.Parse("0x0000000000000000000000000000000000000004");
+    public static readonly UInt160 Bonding = UInt160.Parse("0x0000000000000000000000000000000000000005");
 
     private static readonly object EngineLock = new();
 

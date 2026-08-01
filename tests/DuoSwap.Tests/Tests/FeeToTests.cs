@@ -32,6 +32,7 @@ public class FeeToTests
         _routerHash = DeployContract(_engine, routerNef, routerManifest, new object[] { _factoryHash });
 
         Invoke(_engine, _factoryHash, "setRouter", _routerHash);
+        Invoke(_engine, _factoryHash, "setBonding", Bonding);
 
         var (tokenNef, tokenManifestA) = LoadContract("DuoToken");
         tokenManifestA.Name = "DuoTokenA";
