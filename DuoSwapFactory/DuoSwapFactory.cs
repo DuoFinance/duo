@@ -44,9 +44,13 @@ namespace DuoSwapFactory
             Assert(router != UInt160.Zero, "Router Not Set.");
 
             var sa = (string)Contract.Call(tokenA, "symbol", CallFlags.ReadOnly);
-            Assert(sa != null && sa.Length > 0, "INVALID_TOKEN_A_SYMBOL");
+            Assert(sa != null && sa.Length > 0 && sa.Length <= 12, "INVALID_TOKEN_A_SYMBOL");
+            foreach (char c in sa)
+                Assert((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_', "INVALID_TOKEN_A_SYMBOL");
             var sb = (string)Contract.Call(tokenB, "symbol", CallFlags.ReadOnly);
-            Assert(sb != null && sb.Length > 0, "INVALID_TOKEN_B_SYMBOL");
+            Assert(sb != null && sb.Length > 0 && sb.Length <= 12, "INVALID_TOKEN_B_SYMBOL");
+            foreach (char c in sb)
+                Assert((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_', "INVALID_TOKEN_B_SYMBOL");
             string pairSymbol = (tokenA == GAS.Hash) ? (sb + "-" + sa) : (sa + "-" + sb);
 
             string pairName = "Pair-" + pairSymbol;
