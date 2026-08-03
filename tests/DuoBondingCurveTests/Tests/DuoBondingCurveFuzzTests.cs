@@ -617,4 +617,303 @@ public class DuoBondingCurveFuzzTests
     }
 
     #endregion
+
+    #region Fuzz: Graduation Boundary Safety-Net (GetAmountOut/GetAmountIn Invertibility)
+
+    // Replicates the contract's exact rounding (DuoBondingCurve.Helper.cs):
+    //   GetAmountOut: floor(reserveOut * amountIn / (reserveIn + amountIn))
+    //   GetAmountIn : ceil (reserveIn * amountOut / (reserveOut - amountOut))
+    //
+    // Purpose: turn the ProcessBuy graduation safety net
+    //   `if (netActualGas > netGasAmount) netActualGas = netGasAmount;`  (line 247)
+    // into a CI regression test. The net can only ever be reached if the branch
+    // is entered, i.e. GetAmountOut(gasReserve, tokenReserve, netGasAmount) >= remainingToGrad.
+    // The invariant tested here is that the branch entry threshold equals exactly
+    // GetAmountIn(gasReserve, tokenReserve, remainingToGrad), so the cap can never fire:
+    //   1) AmountOut(AmountIn(remaining)) >= remaining  -- AmountIn never underestimates
+    //   2) AmountOut(AmountIn(remaining) - 1) < remaining -- AmountIn is the true minimum
+    // If either fails, rounding drift would let a buyer get graduation tokens below the
+    // curve's priced cost (or fail to graduate at all) -- a logic defect, not a dust issue.
+
+    private static BigInteger AmountOut(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountIn)
+    {
+        if (amountIn <= 0 || reserveIn <= 0 || reserveOut <= 0) return 0;
+        return reserveOut * amountIn / (reserveIn + amountIn);
+    }
+
+    private static BigInteger AmountIn(BigInteger reserveIn, BigInteger reserveOut, BigInteger amountOut)
+    {
+        if (amountOut <= 0 || reserveOut <= amountOut) return 0;
+        BigInteger numerator = reserveIn * amountOut;
+        BigInteger denominator = reserveOut - amountOut;
+        BigInteger result = numerator / denominator;
+        if (numerator % denominator != 0) result += 1;
+        return result;
+    }
+
+    private static void AssertSafetyNetNeverFires(BigInteger tokenReserve, BigInteger gasReserve, BigInteger remaining)
+    {
+        if (remaining <= 0 || remaining >= tokenReserve) return;
+
+        BigInteger minGas = AmountIn(gasReserve, tokenReserve, remaining);
+        Assert.True(minGas > 0,
+            $"AmountIn returned 0 at tokenReserve={tokenReserve}, gasReserve={gasReserve}, remaining={remaining}");
+
+        // (1) Feeding the priced minimum back must buy >= remaining tokens.
+        BigInteger tokens = AmountOut(gasReserve, tokenReserve, minGas);
+        Assert.True(tokens >= remaining,
+            $"Invertibility broken: AmountOut(AmountIn(remaining))={tokens} < remaining={remaining} " +
+            $"at tokenReserve={tokenReserve}, gasReserve={gasReserve}. The graduation branch would NOT " +
+            $"be entered with netGasAmount == AmountIn(...), leaving the sale ungraduated.");
+
+        // (2) One gas less must NOT buy the remaining tokens (AmountIn is the true minimum).
+        //     Otherwise the safety net would clamp netActualGas down to a smaller netGasAmount,
+        //     pricing the graduation tokens below the curve value.
+        BigInteger tokensBelow = AmountOut(gasReserve, tokenReserve, minGas - 1);
+        Assert.True(tokensBelow < remaining,
+            $"AmountIn overestimates: {minGas - 1} gas already buys {tokensBelow} >= remaining={remaining} " +
+            $"at tokenReserve={tokenReserve}, gasReserve={gasReserve}. Safety net would fire for " +
+            $"netGasAmount in (trueMin, AmountIn(remaining)), pricing graduation below curve value.");
+    }
+
+    private static IEnumerable<(BigInteger, BigInteger)> GraduationBoundaryReserves()
+    {
+        // Extreme ratios/magnitudes where floor/ceil rounding is amplified.
+        yield return (1, 1);
+        yield return (1, BigInteger.Pow(10, 18));
+        yield return (BigInteger.Pow(10, 18), 1);
+        yield return (BigInteger.Pow(10, 8), BigInteger.Pow(10, 8));
+        yield return (BigInteger.Pow(10, 6), BigInteger.Pow(10, 9));
+        yield return (BigInteger.Pow(10, 9), BigInteger.Pow(10, 6));
+        // Realistic magnitudes (vToken ~1e20, vGas ~1e14) incl. the high-bps tiny-cushion case.
+        yield return (BigInteger.Pow(10, 20), BigInteger.Pow(10, 14));
+        yield return (BigInteger.Pow(10, 14), BigInteger.Pow(10, 20));
+        yield return (BigInteger.Pow(10, 20), BigInteger.Pow(10, 10));
+        yield return (BigInteger.Pow(10, 10), BigInteger.Pow(10, 20));
+    }
+
+    private static IEnumerable<BigInteger> RemainingProbes(BigInteger tokenReserve, long mode)
+    {
+        if (tokenReserve <= 1) yield break;
+
+        // Tiny remainingToGrad: rounding dominates GetAmountIn.
+        for (BigInteger r = 1; r <= 8; r++)
+            yield return r;
+
+        // Near-full remainingToGrad: denominator (reserve - remaining) is tiny, amplifying rounding.
+        if (mode == 9999)
+        {
+            for (BigInteger r = 1; r <= 8; r++)
+            {
+                BigInteger rem = tokenReserve - r;
+                if (rem > 0) yield return rem;
+            }
+        }
+
+        foreach (var divisor in new[] { 3, 2 })
+        {
+            BigInteger rem = tokenReserve / divisor;
+            if (rem > 0) yield return rem;
+        }
+    }
+
+    [Theory]
+    [InlineData(1, 10)]          // remaining ~1, reserves ~1e2 (tiny everything)
+    [InlineData(1, 100)]         // remaining ~1, reserves ~1e4
+    [InlineData(9999, 10000)]    // remaining near reserve (tiny cushion), reserves ~1e8
+    [InlineData(1, 1_000_000)]   // remaining ~1, reserves ~1e12 (magnitude gap)
+    public void GetAmountIn_NeverExceeds_NetGasAmount_AtGraduationBoundary(
+        long remainingMode, long reserveScale)
+    {
+        BigInteger tokenReserve = reserveScale * reserveScale;
+        BigInteger gasReserve = reserveScale;
+
+        foreach (var remaining in RemainingProbes(tokenReserve, remainingMode))
+            AssertSafetyNetNeverFires(tokenReserve, gasReserve, remaining);
+    }
+
+    [Fact]
+    public void FuzzMath_GraduationBoundary_SafetyNetNeverFires()
+    {
+        var rng = new Random(Seed + 10);
+        for (int i = 0; i < 20000; i++)
+        {
+            BigInteger tokenReserve = BigInteger.Pow(10, rng.Next(1, 21));
+            BigInteger gasReserve = BigInteger.Pow(10, rng.Next(1, 21));
+            if (rng.Next(2) == 0)
+            {
+                tokenReserve *= rng.Next(1, 1000);
+                gasReserve *= rng.Next(1, 1000);
+            }
+
+            BigInteger remaining;
+            int pick = rng.Next(3);
+            switch (pick)
+            {
+                case 0:
+                    remaining = rng.Next(1, 1000);                                    // tiny
+                    break;
+                case 1:
+                    remaining = tokenReserve - rng.Next(1, 1000);                     // near-full
+                    if (remaining <= 0) remaining = 1;
+                    break;
+                default:
+                    remaining = tokenReserve / rng.Next(2, 10000) + rng.Next(1, 100); // mid-scale
+                    break;
+            }
+
+            if (remaining <= 0 || remaining >= tokenReserve) continue;
+
+            BigInteger minGas = AmountIn(gasReserve, tokenReserve, remaining);
+            Assert.True(minGas > 0, $"iter {i}: AmountIn returned 0 for remaining={remaining}");
+
+            BigInteger tokens = AmountOut(gasReserve, tokenReserve, minGas);
+            Assert.True(tokens >= remaining,
+                $"iter {i}: AmountOut(AmountIn(remaining))={tokens} < remaining={remaining} " +
+                $"(invertibility broken at tokenReserve={tokenReserve}, gasReserve={gasReserve})");
+
+            BigInteger tokensBelow = AmountOut(gasReserve, tokenReserve, minGas - 1);
+            Assert.True(tokensBelow < remaining,
+                $"iter {i}: AmountOut({minGas} - 1)={tokensBelow} >= remaining={remaining} " +
+                $"(AmountIn overestimates at tokenReserve={tokenReserve}, gasReserve={gasReserve})");
+        }
+    }
+
+    // End-to-end: drive the real bytecode to the graduation boundary with a small remainingToGrad,
+    // and assert the final buyer pays exactly the curve minimum (the safety net must never distort
+    // the price). High graduationBps + tiny remaining maximizes rounding sensitivity.
+    [Fact]
+    public void FuzzVm_GraduationFinalBuy_PaysExactMinimum()
+    {
+        int[] bpsValues = { 5001, 5010, 8000, 9899, 9900 };
+        long totalSupply = 100_000_000_000_000_000; // 1e17
+        long targetRaise = 500_000_000_000;
+
+        foreach (int bps in bpsValues)
+        {
+            var (engine, _, _, bondingCurve) = Setup();
+            var gas = engine.Native.GAS.Hash;
+
+            var tokenHash = SetupRandomSale(engine, bondingCurve,
+                totalSupply, 8, "GB" + bps, targetRaise, bps);
+
+            var sale = GetSale(engine, bondingCurve, tokenHash);
+            BigInteger maxTokens = (BigInteger)totalSupply * bps / 10000;
+
+            // Pre-buy to ~95% of maxTokens so graduation is safely not reached.
+            // (A closer landing is fragile: AmountIn near maxTokens rounds up to the same
+            // gas as AmountIn(maxTokens), which would graduate the pre-buy itself.)
+            BigInteger targetRemaining = maxTokens / 20;
+            BigInteger preGas = AmountIn(sale.VirtualGas, sale.VirtualToken, maxTokens - targetRemaining);
+            Assert.True(preGas > 0, $"bps={bps}: preGas<=0");
+            Buy(engine, bondingCurve, tokenHash, Owner, preGas);
+
+            var before = GetSale(engine, bondingCurve, tokenHash);
+            Assert.False(before.Graduated, $"bps={bps}: pre-buy graduated prematurely");
+            BigInteger remaining = maxTokens - before.TokensSold;
+            Assert.True(remaining > 0 && remaining < maxTokens / 10,
+                $"bps={bps}: remaining={remaining} (expected 0 < remaining < {maxTokens / 10})");
+
+            // The final buy must pay exactly the curve minimum for the remaining tokens (fee-off).
+            BigInteger gasReserve = before.VirtualGas + before.GASRaised;
+            BigInteger tokenReserve = before.VirtualToken - before.TokensSold;
+            BigInteger expected = AmountIn(gasReserve, tokenReserve, remaining);
+
+            BigInteger gasBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+            Buy(engine, bondingCurve, tokenHash, Owner, expected + 2);
+            BigInteger gasSpent = gasBefore - Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+
+            var after = GetSale(engine, bondingCurve, tokenHash);
+            Assert.True(after.Graduated,
+                $"bps={bps}: sale not graduated after final buy. " +
+                $"before(sold={before.TokensSold}, raised={before.GASRaised}), remaining={remaining}, " +
+                $"expected={expected}, gasSpent={gasSpent}, after(sold={after.TokensSold}, raised={after.GASRaised})");
+            Assert.Equal(expected, gasSpent);
+        }
+    }
+
+    // feeOn variant: exercises the graduation fee logic end-to-end —
+    // curveGas is pinned to netActualGas, fee = actualGas - curveGas is collected
+    // to feeTo, and the refund math stays exact.
+    [Fact]
+    public void FuzzVm_GraduationFinalBuy_FeeOn_ExactMinimumAndFee()
+    {
+        const long FEE_FACTOR = 3;
+        const long FEE_DENOMINATOR = 10000;
+        int[] bpsValues = { 5001, 8000, 9900 };
+        long totalSupply = 100_000_000_000_000_000; // 1e17
+        long targetRaise = 500_000_000_000;
+        var feeTo = UInt160.Parse("0x0000000000000000000000000000000000000008");
+
+        foreach (int bps in bpsValues)
+        {
+            var (engine, factory, _, bondingCurve) = Setup();
+            var gas = engine.Native.GAS.Hash;
+            Invoke(engine, factory, "setFeeTo", feeTo);
+
+            var tokenHash = SetupRandomSale(engine, bondingCurve,
+                totalSupply, 8, "FGB" + bps, targetRaise, bps);
+
+            var sale = GetSale(engine, bondingCurve, tokenHash);
+            BigInteger maxTokens = (BigInteger)totalSupply * bps / 10000;
+
+            // Pre-buy to ~95% of maxTokens (fee-on applies to the pre-buy too).
+            BigInteger targetRemaining = maxTokens / 20;
+            BigInteger preGas = AmountIn(sale.VirtualGas, sale.VirtualToken, maxTokens - targetRemaining);
+            Assert.True(preGas > 0, $"bps={bps}: preGas<=0");
+            Buy(engine, bondingCurve, tokenHash, Owner, preGas);
+
+            var before = GetSale(engine, bondingCurve, tokenHash);
+            Assert.False(before.Graduated, $"bps={bps}: pre-buy graduated prematurely (feeOn)");
+            BigInteger remaining = maxTokens - before.TokensSold;
+            Assert.True(remaining > 0 && remaining < maxTokens / 10,
+                $"bps={bps}: remaining={remaining} (expected 0 < remaining < {maxTokens / 10})");
+
+            BigInteger gasReserve = before.VirtualGas + before.GASRaised;
+            BigInteger tokenReserve = before.VirtualToken - before.TokensSold;
+            BigInteger netActualGas = AmountIn(gasReserve, tokenReserve, remaining);
+            BigInteger actualGas = (netActualGas * FEE_DENOMINATOR + (FEE_DENOMINATOR - FEE_FACTOR - 1)) / (FEE_DENOMINATOR - FEE_FACTOR);
+            BigInteger feeExpected = actualGas - netActualGas;
+            Assert.True(feeExpected >= 0, $"bps={bps}: fee<0 (netActualGas={netActualGas}, actualGas={actualGas})");
+
+            // Send enough net gas to enter the graduation branch without triggering the cap.
+            BigInteger gasSent = actualGas + 1000;
+
+            // feeTo also receives the pair deploy fee: the factory auto-forwards it to
+            // feeTo when feeTo is set (FinalizeSale path 3 deploys the pair during this buy).
+            BigInteger deployFee = Invoke(engine, factory, "getDeployFee").GetInteger();
+
+            BigInteger feeToBefore = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+            BigInteger gasBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+            Buy(engine, bondingCurve, tokenHash, Owner, gasSent);
+            BigInteger gasSpent = gasBefore - Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+            BigInteger feeToAfter = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+
+            var after = GetSale(engine, bondingCurve, tokenHash);
+            Assert.True(after.Graduated, $"bps={bps}: sale not graduated after final buy (feeOn)");
+            Assert.Equal(actualGas, gasSpent);
+            Assert.Equal(feeExpected + deployFee, feeToAfter - feeToBefore);
+            Assert.Equal(netActualGas, after.GASRaised - before.GASRaised);
+        }
+    }
+
+    private static void Buy(TestEngine engine, UInt160 bondingCurve, UInt160 tokenHash,
+        UInt160 buyer, BigInteger gasAmount)
+    {
+        var gas = engine.Native.GAS.Hash;
+
+        var data = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = new ContractParameter[]
+            {
+                new(ContractParameterType.Hash160) { Value = tokenHash },
+                new(ContractParameterType.Integer) { Value = BigInteger.Zero }
+            }
+        };
+
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, buyer);
+        Invoke(engine, gas, "transfer", buyer, bondingCurve, gasAmount, data);
+    }
+
+    #endregion
 }

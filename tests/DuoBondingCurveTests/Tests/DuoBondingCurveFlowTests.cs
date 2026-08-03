@@ -138,6 +138,114 @@ public class DuoBondingCurveFlowTests
     }
 
     [Fact]
+    public void Flow_FeeTo_Toggle_BeforeAndAfter()
+    {
+        var (engine, factory, router, bondingCurve) = Setup();
+        var gas = engine.Native.GAS.Hash;
+
+        var feeTo = UInt160.Parse("0x0000000000000000000000000000000000000009");
+        var tokenHash = SetupSale(engine, factory, router, bondingCurve,
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+
+        UInt160 ReadFeeTo() => new UInt160(Invoke(engine, factory, "getFeeTo").GetSpan());
+        BigInteger Treasury() => Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+        BigInteger Raised() => getSale(engine, bondingCurve, tokenHash).GASRaised;
+
+        Assert.True(ReadFeeTo() == UInt160.Zero, "feeTo should start unset");
+
+        // 1) Buy before feeTo is set -> no fee at all.
+        BigInteger buyGas1 = 10_000_000_000;
+        BigInteger raisedBefore1 = Raised();
+        BigInteger treasuryBefore1 = Treasury();
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, buyGas1);
+        Assert.Equal(BigInteger.Zero, Treasury() - treasuryBefore1);
+        Assert.Equal(buyGas1, Raised() - raisedBefore1);
+
+        // 2) Enable feeTo -> next buy charges exactly 0.03%.
+        Invoke(engine, factory, "setFeeTo", feeTo);
+        Assert.Equal(feeTo, ReadFeeTo());
+
+        BigInteger buyGas2 = 20_000_000_000;
+        BigInteger expectedFee2 = buyGas2 * 3 / 10000;
+        BigInteger raisedBefore2 = Raised();
+        BigInteger treasuryBefore2 = Treasury();
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, buyGas2);
+        Assert.Equal(expectedFee2, Treasury() - treasuryBefore2);
+        Assert.Equal(buyGas2 - expectedFee2, Raised() - raisedBefore2);
+
+        // 3) Disable feeTo (set to zero) -> no fee again.
+        Invoke(engine, factory, "setFeeTo", UInt160.Zero);
+        Assert.True(ReadFeeTo() == UInt160.Zero, "feeTo should be disabled");
+
+        BigInteger buyGas3 = 15_000_000_000;
+        BigInteger raisedBefore3 = Raised();
+        BigInteger treasuryBefore3 = Treasury();
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, buyGas3);
+        Assert.Equal(BigInteger.Zero, Treasury() - treasuryBefore3);
+        Assert.Equal(buyGas3, Raised() - raisedBefore3);
+    }
+
+    [Fact]
+    public void Flow_FeeTo_Sell_Toggle_BeforeAndAfter()
+    {
+        var (engine, factory, router, bondingCurve) = Setup();
+        var gas = engine.Native.GAS.Hash;
+
+        var feeTo = UInt160.Parse("0x000000000000000000000000000000000000000a");
+        var tokenHash = SetupSale(engine, factory, router, bondingCurve,
+            "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
+
+        // Buy (fee-off) first so we hold some tokens to sell back.
+        BuyTokens(engine, bondingCurve, tokenHash, Owner, 20_000_000_000);
+        BigInteger totalTokens = Invoke(engine, tokenHash, "balanceOf", Owner).GetInteger();
+        Assert.True(totalTokens > 0);
+
+        BigInteger Treasury() => Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+        BigInteger Gross(BigInteger sellAmount)
+        {
+            var sale = getSale(engine, bondingCurve, tokenHash);
+            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
+            return gasReserve * sellAmount / (tokenReserve + sellAmount);
+        }
+
+        // 1) Sell while feeTo unset -> no fee, user keeps the full curve amount.
+        BigInteger sell1 = totalTokens / 3;
+        BigInteger gross1 = Gross(sell1);
+        Assert.Equal(gross1, Invoke(engine, bondingCurve, "getGASForTokens", tokenHash, sell1).GetInteger());
+        BigInteger treasuryBefore1 = Treasury();
+        BigInteger gasBefore1 = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        SellTokens(engine, bondingCurve, tokenHash, Owner, sell1);
+        BigInteger gasReceived1 = Invoke(engine, gas, "balanceOf", Owner).GetInteger() - gasBefore1;
+        Assert.Equal(BigInteger.Zero, Treasury() - treasuryBefore1);
+        Assert.Equal(gross1, gasReceived1);
+
+        // 2) Enable feeTo -> sell charges exactly 0.03% to the treasury.
+        Invoke(engine, factory, "setFeeTo", feeTo);
+        BigInteger sell2 = totalTokens / 3;
+        BigInteger gross2 = Gross(sell2);
+        BigInteger fee2 = gross2 * 3 / 10000;
+        Assert.Equal(gross2 - fee2, Invoke(engine, bondingCurve, "getGASForTokens", tokenHash, sell2).GetInteger());
+        BigInteger treasuryBefore2 = Treasury();
+        BigInteger gasBefore2 = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        SellTokens(engine, bondingCurve, tokenHash, Owner, sell2);
+        BigInteger gasReceived2 = Invoke(engine, gas, "balanceOf", Owner).GetInteger() - gasBefore2;
+        Assert.Equal(fee2, Treasury() - treasuryBefore2);
+        Assert.Equal(gross2 - fee2, gasReceived2);
+
+        // 3) Disable feeTo (set to zero) -> no fee again.
+        Invoke(engine, factory, "setFeeTo", UInt160.Zero);
+        BigInteger sell3 = Invoke(engine, tokenHash, "balanceOf", Owner).GetInteger();
+        BigInteger gross3 = Gross(sell3);
+        BigInteger treasuryBefore3 = Treasury();
+        BigInteger gasBefore3 = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        SellTokens(engine, bondingCurve, tokenHash, Owner, sell3);
+        BigInteger gasReceived3 = Invoke(engine, gas, "balanceOf", Owner).GetInteger() - gasBefore3;
+        Assert.Equal(BigInteger.Zero, Treasury() - treasuryBefore3);
+        Assert.Equal(gross3, gasReceived3);
+    }
+
+    [Fact]
     public void Flow_Graduation_ExcessGasRefunded()
     {
         var (engine, factory, router, bondingCurve) = Setup();

@@ -248,10 +248,15 @@ namespace DuoBondingCurve
 
                 if (feeOn)
                 {
+                    // Gross-up only to recover the pre-fee amount for refund math (excess = gasAmount - actualGas).
+                    // curveGas is pinned to netActualGas — the exact value GetAmountIn priced `tokens` against —
+                    // so GASRaised never drifts from what was used to compute the sale price.
                     actualGas = (netActualGas * FEE_DENOMINATOR + (FEE_DENOMINATOR - FEE_FACTOR - 1)) / (FEE_DENOMINATOR - FEE_FACTOR);
                     if (actualGas > gasAmount) actualGas = gasAmount;
-                    fee = actualGas * FEE_FACTOR / FEE_DENOMINATOR;
-                    curveGas = actualGas - fee;
+
+                    curveGas = netActualGas;
+                    fee = actualGas - curveGas;
+                    Assert(fee >= 0, "FEE_UNDERFLOW"); // defensive: structurally unreachable
                 }
                 else
                 {
