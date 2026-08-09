@@ -17,6 +17,8 @@ namespace DuoBondingCurve
         private const byte DEFAULT_DECIMALS = 8; // fixed to 8 decimals
         private const long FEE_FACTOR = 3;
         private const long FEE_DENOMINATOR = 10000;
+        private const long MIN_GRADUATION_BPS = 6000;
+        private const long MAX_GRADUATION_BPS = 9999;
 
         private static Transaction Tx => (Transaction)Runtime.Transaction;
 

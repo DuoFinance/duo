@@ -155,7 +155,7 @@ public class DuoBondingCurveFuzzTests
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(10_000, 10_000_000_000_000);
             long targetRaise = rng.NextInt64(10_000_000, 10_000_000_000_000);
-            int graduationBps = rng.Next(5001, 9901);
+            int graduationBps = rng.Next(5001, 10000);
             long symbolNum = rng.NextInt64(10000, 99999);
             string symbol = "T" + symbolNum;
 
@@ -181,7 +181,7 @@ public class DuoBondingCurveFuzzTests
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(1_000, 1_000_000_000_000_000);
             long targetRaise = rng.NextInt64(1_000_000, 100_000_000_000_000);
-            int graduationBps = rng.Next(5001, 9901);
+            int graduationBps = rng.Next(5001, 10000);
             long symbolNum = rng.NextInt64(10000, 99999);
 
             var tokenHash = SetupRandomSale(engine, bondingCurve,
@@ -226,7 +226,7 @@ public class DuoBondingCurveFuzzTests
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(10_000, 1_000_000_000_000);
             long targetRaise = rng.NextInt64(10_000_000, 10_000_000_000_000);
-            int graduationBps = rng.Next(5001, 9901);
+            int graduationBps = rng.Next(5001, 10000);
             long symbolNum = rng.NextInt64(10000, 99999);
 
             var tokenHash = SetupRandomSale(engine, bondingCurve,
@@ -254,7 +254,7 @@ public class DuoBondingCurveFuzzTests
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(100_000, 100_000_000_000);
             long targetRaise = rng.NextInt64(1_000_000_000, 10_000_000_000_000);
-            int graduationBps = rng.Next(5001, 9901);
+            int graduationBps = rng.Next(5001, 10000);
             long symbolNum = rng.NextInt64(10000, 99999);
 
             var tokenHash = SetupRandomSale(engine, bondingCurve,
@@ -279,7 +279,7 @@ public class DuoBondingCurveFuzzTests
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(1_000, 100_000_000_000);
             long targetRaise = rng.NextInt64(1_000_000, 10_000_000_000_000);
-            int graduationBps = rng.Next(5001, 9901);
+            int graduationBps = rng.Next(5001, 10000);
             long symbolNum = rng.NextInt64(10000, 99999);
 
             var tokenHash = SetupRandomSale(engine, bondingCurve,
@@ -545,7 +545,7 @@ public class DuoBondingCurveFuzzTests
     [Fact]
     public void FuzzVm_GraduationBps_NearLimits()
     {
-        int[] bpsValues = { 5001, 5002, 5010, 5100, 9890, 9899, 9900 };
+        int[] bpsValues = { 5001, 5002, 5010, 5100, 9890, 9899, 9999 };
         var rng = new Random(Seed + 8);
 
         foreach (int bps in bpsValues)
@@ -576,15 +576,15 @@ public class DuoBondingCurveFuzzTests
 
     #endregion
 
-    #region Fuzz: GraduationBps 5001–9900 Complete Sweep
+    #region Fuzz: GraduationBps 6000–9999 Complete Sweep
 
     [Fact]
     public void FuzzVm_GraduationBps_CompleteSweep()
     {
         var rng = new Random(Seed + 9);
-        int step = Math.Max(1, (9900 - 5001) / 50);
+        int step = Math.Max(1, (9999 - 6000) / 50);
 
-        for (int bps = 5001; bps <= 9900; bps += step)
+        for (int bps = 6000; bps <= 9999; bps += step)
         {
             var (engine, _, _, bondingCurve) = Setup();
             long totalSupply = rng.NextInt64(10_000, 1_000_000_000_000);
@@ -785,7 +785,7 @@ public class DuoBondingCurveFuzzTests
     [Fact]
     public void FuzzVm_GraduationFinalBuy_PaysExactMinimum()
     {
-        int[] bpsValues = { 5001, 5010, 8000, 9899, 9900 };
+        int[] bpsValues = { 5001, 5010, 8000, 9899, 9999 };
         long totalSupply = 100_000_000_000_000_000; // 1e17
         long targetRaise = 500_000_000_000;
 
@@ -840,7 +840,7 @@ public class DuoBondingCurveFuzzTests
     {
         const long FEE_FACTOR = 3;
         const long FEE_DENOMINATOR = 10000;
-        int[] bpsValues = { 5001, 8000, 9900 };
+        int[] bpsValues = { 5001, 8000, 9999 };
         long totalSupply = 100_000_000_000_000_000; // 1e17
         long targetRaise = 500_000_000_000;
         var feeTo = UInt160.Parse("0x0000000000000000000000000000000000000008");

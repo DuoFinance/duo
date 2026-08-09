@@ -71,7 +71,7 @@ namespace DuoBondingCurve
             Assert(name.Length > 0 && name.Length <= 64, "INVALID_NAME");
             Assert(symbol.Length > 0 && symbol.Length <= 8, "INVALID_SYMBOL");
             Assert(targetRaise > 0, "INVALID_TARGET");
-            Assert(graduationBps >= 6000 && graduationBps <= 9900, "INVALID_GRADUATION_BPS");
+            Assert(graduationBps >= MIN_GRADUATION_BPS && graduationBps <= MAX_GRADUATION_BPS, "INVALID_GRADUATION_BPS");
             Assert(discord == null || discord.Length <= 128, "INVALID_DISCORD_TOO_LONG");
             Assert(x == null || x.Length <= 128, "INVALID_X_TOO_LONG");
             Assert(telegram == null || telegram.Length <= 128, "INVALID_TELEGRAM_TOO_LONG");

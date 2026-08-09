@@ -144,16 +144,29 @@ public class DuoBondingCurveUnitTests
     }
 
         [Fact]
-        public void CreateSale_GraduationBps9901_Faults()
+        public void CreateSale_GraduationBps10000_Faults()
         {
             string name = "TestToken";
             string symbol = "TST";
             BigInteger targetRaise = 10_000_000_000;
-            BigInteger graduationBps = 9901;
+            BigInteger graduationBps = 10000;
 
             var exception = Record.Exception(() =>
                 Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
             Assert.NotNull(exception);
+        }
+
+        [Fact]
+        public void CreateSale_GraduationBps9999_Works()
+        {
+            string name = "TestToken";
+            string symbol = "TST";
+            BigInteger targetRaise = 10_000_000_000;
+            BigInteger graduationBps = 9999;
+
+            var exception = Record.Exception(() =>
+                Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
+            Assert.Null(exception);
         }
 
         [Fact]
