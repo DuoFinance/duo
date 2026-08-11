@@ -8,7 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="DuoHoneypot/**/*.cs" />
-    <Compile Remove="DuoMockBNeo/**/*.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
@@ -33,12 +32,10 @@
     <EmbeddedResource Include="..\..\DuoLaunchpad\bin\sc\DuoLaunchpad.manifest.json" Link="Contracts\DuoLaunchpad.manifest.json" />
     <EmbeddedResource Include="DuoHoneypot\bin\sc\DuoHoneypot.nef" Link="Contracts\DuoHoneypot.nef" />
     <EmbeddedResource Include="DuoHoneypot\bin\sc\DuoHoneypot.manifest.json" Link="Contracts\DuoHoneypot.manifest.json" />
-    <EmbeddedResource Include="DuoMockBNeo\bin\sc\DuoMockBNeo.nef" Link="Contracts\DuoMockBNeo.nef" />
-    <EmbeddedResource Include="DuoMockBNeo\bin\sc\DuoMockBNeo.manifest.json" Link="Contracts\DuoMockBNeo.manifest.json" />
+
     
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="DuoHoneypot\DuoHoneypot.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="DuoMockBNeo\DuoMockBNeo.csproj" ReferenceOutputAssembly="false" />
-  </ItemGroup>
+    </ItemGroup>
 </Project>

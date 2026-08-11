@@ -69,7 +69,7 @@ namespace DuoSwapPair
         }
         #endregion
 
-        #region Router and Factory Getters
+        #region Router Factory and Bonding Getters
         [Safe]
         public static UInt160 GetRouter()
         {
@@ -99,10 +99,9 @@ namespace DuoSwapPair
         /// </summary>
         public static bool ClaimGASFrombNEO()
         {
-            Assert(Runtime.CallingScriptHash == GetFactory(), "ONLY_FACTORY");
-
-            UInt160 bneo = (UInt160)Contract.Call(GetFactory(), "getBNeo", CallFlags.ReadOnly);
-            if (bneo.IsZero) return false;
+            UInt160 factory = GetFactory();
+            Assert(Runtime.CallingScriptHash == factory, "ONLY_FACTORY");
+            UInt160 bneo = (UInt160)Contract.Call(factory, "getBNeo", CallFlags.ReadOnly);
 
             UInt160 token0 = Token0;
             UInt160 token1 = Token1;
@@ -110,8 +109,7 @@ namespace DuoSwapPair
             if (!bneoToken.IsAddress()) return false;
 
             UInt160 self = Runtime.ExecutingScriptHash;
-            UInt160 factory = GetFactory();
-            BigInteger beforeBalance = TokenBalance(GAS.Hash, self);
+            BigInteger beforeBalance = GAS.BalanceOf(self);
 
             // Sending 0 bNEO back to the bNEO contract triggers the GAS claim.
             bool ok = (bool)Contract.Call(
@@ -121,15 +119,11 @@ namespace DuoSwapPair
                 new object[] { self, bneoToken, 0, null });
             Assert(ok, "CLAIM_FAILED", bneoToken);
 
-            BigInteger afterBalance = TokenBalance(GAS.Hash, self);
+            BigInteger afterBalance = GAS.BalanceOf(self);
             BigInteger claimed = afterBalance - beforeBalance;
             if (claimed > 0)
             {
-                bool transferOk = (bool)Contract.Call(
-                    GAS.Hash,
-                    "transfer",
-                    CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify,
-                    new object[] { self, factory, claimed, null });
+                bool transferOk = GAS.Transfer(self, factory, claimed);
                 Assert(transferOk, "GAS_TRANSFER_FAILED");
             }
             return true;

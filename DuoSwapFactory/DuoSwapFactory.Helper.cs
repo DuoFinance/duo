@@ -119,6 +119,7 @@ namespace DuoSwapFactory
 
         public static void SetGovernanceToken(UInt160 tokenHash)
         {
+            Assert(tokenHash.IsAddress(), "Invalid Bonding.");
             Assert(Runtime.CheckWitness(GetSetter()), "ONLY_SETTER");
             Assert(GetGovernanceToken().IsZero, "ALREADY_SET_IMMUTABLE");
             StoragePut(GOVERNANCE_KEY, tokenHash);
@@ -138,12 +139,13 @@ namespace DuoSwapFactory
             return bneo?.Length == 20 ? (UInt160)bneo : UInt160.Zero;
         }
 
-        public static void SetBNeo(UInt160 bneo)
+        public static bool SetBNeo(UInt160 bneo)
         {
             Assert(bneo.IsValid, "Invalid Address.");
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
             StoragePut(BNEO_KEY, bneo);
             onSetBNeo(bneo);
+            return true;
         }
         #endregion
 
@@ -157,20 +159,11 @@ namespace DuoSwapFactory
             Assert(to.IsAddress(), "Invalid Address.");
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
 
-            BigInteger balance = (BigInteger)Contract.Call(
-                GAS.Hash,
-                "balanceOf",
-                CallFlags.ReadOnly,
-                new object[] { Runtime.ExecutingScriptHash });
-
+            BigInteger balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
             BigInteger withdrawAmount = amount == 0 ? balance : amount;
             Assert(withdrawAmount > 0 && withdrawAmount <= balance, "INVALID_AMOUNT");
 
-            bool result = (bool)Contract.Call(
-                GAS.Hash,
-                "transfer",
-                CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, to, withdrawAmount, null });
+            bool result = GAS.Transfer(Runtime.ExecutingScriptHash, to, withdrawAmount);
             Assert(result, "Withdraw Failed.");
 
             onWithdraw(to, withdrawAmount);
@@ -178,7 +171,7 @@ namespace DuoSwapFactory
         }
         #endregion
 
-        #region BNeo Harvest
+        #region Claim GAS From BNeo Pairs
         /// <summary>
         /// Harvest claimed GAS from every bNEO pair to this factory.
         /// Setter only. Each bNEO pair forwards its accrued GAS reward here.

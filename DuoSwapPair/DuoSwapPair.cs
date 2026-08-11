@@ -39,11 +39,11 @@ namespace DuoSwapPair
         public static BigInteger GetReserve0() => ReservePair.Reserve0;
         [Safe]
         public static BigInteger GetReserve1() => ReservePair.Reserve1;
-
+        [Safe]
         public static PriceCumulative GetPriceCumulative() => Cumulative;
-
+        [Safe]
         public static BigInteger Price0CumulativeLast() => Cumulative.Price0CumulativeLast;
-
+        [Safe]
         public static BigInteger Price1CumulativeLast() => Cumulative.Price1CumulativeLast;
 
         [Safe]
