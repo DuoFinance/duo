@@ -92,6 +92,50 @@ namespace DuoSwapPair
         }
         #endregion
 
+        #region bNEO GAS Claim
+        /// <summary>
+        /// Claim accrued GAS reward from the bNEO reserve token and forward it to the factory.
+        /// Only callable by the factory. No-op for pairs that are not bNEO pairs.
+        /// </summary>
+        public static bool ClaimGASFrombNEO()
+        {
+            Assert(Runtime.CallingScriptHash == GetFactory(), "ONLY_FACTORY");
+
+            UInt160 bneo = (UInt160)Contract.Call(GetFactory(), "getBNeo", CallFlags.ReadOnly);
+            if (bneo.IsZero) return false;
+
+            UInt160 token0 = Token0;
+            UInt160 token1 = Token1;
+            UInt160 bneoToken = token0 == bneo ? token0 : (token1 == bneo ? token1 : UInt160.Zero);
+            if (!bneoToken.IsAddress()) return false;
+
+            UInt160 self = Runtime.ExecutingScriptHash;
+            UInt160 factory = GetFactory();
+            BigInteger beforeBalance = TokenBalance(GAS.Hash, self);
+
+            // Sending 0 bNEO back to the bNEO contract triggers the GAS claim.
+            bool ok = (bool)Contract.Call(
+                bneoToken,
+                "transfer",
+                CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify,
+                new object[] { self, bneoToken, 0, null });
+            Assert(ok, "CLAIM_FAILED", bneoToken);
+
+            BigInteger afterBalance = TokenBalance(GAS.Hash, self);
+            BigInteger claimed = afterBalance - beforeBalance;
+            if (claimed > 0)
+            {
+                bool transferOk = (bool)Contract.Call(
+                    GAS.Hash,
+                    "transfer",
+                    CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify,
+                    new object[] { self, factory, claimed, null });
+                Assert(transferOk, "GAS_TRANSFER_FAILED");
+            }
+            return true;
+        }
+        #endregion
+
         #region KLast
         [Safe]
         public static BigInteger GetKLast()

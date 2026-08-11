@@ -16,6 +16,7 @@ namespace DuoSwapFactory
         private const string ROUTER_KEY = "Router";
         private const string BONDING_KEY = "Bonding";
         private const string GOVERNANCE_KEY = "GovernanceToken";
+        private const string BNEO_KEY = "BNeo";
         private static readonly byte[] PAIR_PREFIX = new byte[] { 0x01 };
         #endregion
 
@@ -70,33 +71,6 @@ namespace DuoSwapFactory
 
         #region DeployFee
         public static BigInteger GetDeployFee() => ContractManagement.GetMinimumDeploymentFee() / 100;
-
-        /// <summary>
-        /// Auto-transfer deployFee to feeTo when feeTo is set.
-        /// Called internally after receiving deploy fee.
-        /// </summary>
-        private static void TransferDeployFee()
-        {
-            UInt160 feeTo = GetFeeTo();
-            if (!feeTo.IsAddress()) return; // feeTo not set, keep in contract
-
-            BigInteger balance = (BigInteger)Contract.Call(
-                GAS.Hash,
-                "balanceOf",
-                CallFlags.ReadOnly,
-                new object[] { Runtime.ExecutingScriptHash });
-            
-            if (balance <= 0) return;
-
-            bool result = (bool)Contract.Call(
-                GAS.Hash,
-                "transfer",
-                CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, feeTo, balance, null });
-            Assert(result, "Transfer Fee Failed.");
-
-            onWithdrawFee(feeTo, balance);
-        }
         #endregion
 
         #region Router
@@ -152,6 +126,80 @@ namespace DuoSwapFactory
         }
         #endregion
 
+        #region BNeo
+        /// <summary>
+        /// The bNEO (wrapped NEO) contract hash used by pairs to claim GAS rewards.
+        /// Updatable by setter, so the wrapped bNEO version can be switched.
+        /// </summary>
+        [Safe]
+        public static UInt160 GetBNeo()
+        {
+            var bneo = StorageGet(BNEO_KEY);
+            return bneo?.Length == 20 ? (UInt160)bneo : UInt160.Zero;
+        }
+
+        public static void SetBNeo(UInt160 bneo)
+        {
+            Assert(bneo.IsValid, "Invalid Address.");
+            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
+            StoragePut(BNEO_KEY, bneo);
+            onSetBNeo(bneo);
+        }
+        #endregion
+
+        #region GAS Withdraw
+        /// <summary>
+        /// Withdraw accumulated GAS (deploy fees and GAS claimed from bNEO pairs) held by this factory.
+        /// Setter only. amount == 0 withdraws the full GAS balance.
+        /// </summary>
+        public static bool Withdraw(UInt160 to, BigInteger amount)
+        {
+            Assert(to.IsAddress(), "Invalid Address.");
+            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
+
+            BigInteger balance = (BigInteger)Contract.Call(
+                GAS.Hash,
+                "balanceOf",
+                CallFlags.ReadOnly,
+                new object[] { Runtime.ExecutingScriptHash });
+
+            BigInteger withdrawAmount = amount == 0 ? balance : amount;
+            Assert(withdrawAmount > 0 && withdrawAmount <= balance, "INVALID_AMOUNT");
+
+            bool result = (bool)Contract.Call(
+                GAS.Hash,
+                "transfer",
+                CallFlags.All,
+                new object[] { Runtime.ExecutingScriptHash, to, withdrawAmount, null });
+            Assert(result, "Withdraw Failed.");
+
+            onWithdraw(to, withdrawAmount);
+            return true;
+        }
+        #endregion
+
+        #region BNeo Harvest
+        /// <summary>
+        /// Harvest claimed GAS from every bNEO pair to this factory.
+        /// Setter only. Each bNEO pair forwards its accrued GAS reward here.
+        /// </summary>
+        public static bool ClaimGasAll()
+        {
+            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
+
+            UInt160 bneo = GetBNeo();
+            var iterator = (Iterator<KeyValue>)StorageFind(PAIR_PREFIX);
+            while (iterator.Next())
+            {
+                var keyValue = iterator.Value;
+                UInt160 pair = keyValue.Value;
+                if (!pair.IsValid || pair.IsZero || !bneo.IsAddress()) continue;
+                Contract.Call(pair, "claimGASFrombNEO", CallFlags.All, new object[0]);
+            }
+            return true;
+        }
+        #endregion
+
         #region Events
         [DisplayName("StorePair")]
         public static event StorePairEvent onStorePair;
@@ -169,6 +217,14 @@ namespace DuoSwapFactory
         public static event SetGovernanceTokenEvent onGovernanceTokenSet;
         public delegate void SetGovernanceTokenEvent(UInt160 tokenHash);
 
+        [DisplayName("SetBNeo")]
+        public static event SetBNeoEvent onSetBNeo;
+        public delegate void SetBNeoEvent(UInt160 bneo);
+
+        [DisplayName("Withdraw")]
+        public static event WithdrawEvent onWithdraw;
+        public delegate void WithdrawEvent(UInt160 to, BigInteger amount);
+
         [DisplayName("OwnershipTransferred")]
         public static event OnOwnershipTransferredEvent onOwnershipTransferred;
         public delegate void OnOwnershipTransferredEvent(UInt160 current, UInt160 newSetter);
@@ -176,10 +232,6 @@ namespace DuoSwapFactory
         [DisplayName("SetFeeTo")]
         public static event SetFeeToEvent onSetFeeTo;
         public delegate void SetFeeToEvent(UInt160 feeTo);
-
-        [DisplayName("WithdrawFee")]
-        public static event WithdrawFeeEvent onWithdrawFee;
-        public delegate void WithdrawFeeEvent(UInt160 feeTo, BigInteger amount);
 
         [DisplayName("Fault")]
         public static event FaultEvent onFault;

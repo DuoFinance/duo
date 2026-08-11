@@ -879,20 +879,23 @@ public class DuoBondingCurveFuzzTests
             // Send enough net gas to enter the graduation branch without triggering the cap.
             BigInteger gasSent = actualGas + 1000;
 
-            // feeTo also receives the pair deploy fee: the factory auto-forwards it to
-            // feeTo when feeTo is set (FinalizeSale path 3 deploys the pair during this buy).
+            // The pair deploy fee stays in the factory (owner controls it via Withdraw);
+            // feeTo receives only the graduation fee.
             BigInteger deployFee = Invoke(engine, factory, "getDeployFee").GetInteger();
+            BigInteger factoryBefore = Invoke(engine, gas, "balanceOf", factory).GetInteger();
 
             BigInteger feeToBefore = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
             BigInteger gasBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
             Buy(engine, bondingCurve, tokenHash, Owner, gasSent);
             BigInteger gasSpent = gasBefore - Invoke(engine, gas, "balanceOf", Owner).GetInteger();
             BigInteger feeToAfter = Invoke(engine, gas, "balanceOf", feeTo).GetInteger();
+            BigInteger factoryAfter = Invoke(engine, gas, "balanceOf", factory).GetInteger();
 
             var after = GetSale(engine, bondingCurve, tokenHash);
             Assert.True(after.Graduated, $"bps={bps}: sale not graduated after final buy (feeOn)");
             Assert.Equal(actualGas, gasSpent);
-            Assert.Equal(feeExpected + deployFee, feeToAfter - feeToBefore);
+            Assert.Equal(feeExpected, feeToAfter - feeToBefore);
+            Assert.Equal(deployFee, factoryAfter - factoryBefore);
             Assert.Equal(netActualGas, after.GASRaised - before.GASRaised);
         }
     }

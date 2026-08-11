@@ -286,11 +286,12 @@ public class SwapGapTests
     }
 
     // ============================================
-    // GAP 5: Factory TransferDeployFee auto-forward
+    // GAP 5: Factory keeps the deploy fee (controlled by setter via Withdraw),
+    //        no longer auto-forwarded to feeTo.
     // ============================================
 
     [Fact]
-    public void Factory_DeployFee_AutoTransferredToFeeTo()
+    public void Factory_DeployFee_StaysInFactory_SetterWithdraws()
     {
         var engine = CreateEngine();
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
@@ -323,10 +324,11 @@ public class SwapGapTests
         Invoke(engine, gas, "transfer", va, Owner, fee, null);
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
-        // Set feeTo BEFORE deploy -> deployFee must auto-forward
+        // Set feeTo BEFORE deploy -> deployFee must NOT be auto-forwarded
         Invoke(engine, factory, "setFeeTo", User);
 
         var userGasBefore = Invoke(engine, gas, "balanceOf", User).GetInteger();
+        var factoryGasBefore = Invoke(engine, gas, "balanceOf", factory).GetInteger();
 
         var data = new ContractParameter(ContractParameterType.Array)
         {
@@ -342,11 +344,21 @@ public class SwapGapTests
             new ContractParameter(ContractParameterType.Integer) { Value = fee }, data));
 
         var userGasAfter = Invoke(engine, gas, "balanceOf", User).GetInteger();
-        Assert.Equal(fee, userGasAfter - userGasBefore);
+        var factoryGasAfter = Invoke(engine, gas, "balanceOf", factory).GetInteger();
+
+        // feeTo received nothing; the deploy fee stays in the factory.
+        Assert.Equal(0, userGasAfter - userGasBefore);
+        Assert.Equal(fee, factoryGasAfter - factoryGasBefore);
 
         // Pair should still be deployed and functional
         var pair = new UInt160(Invoke(engine, factory, "getPairHash", tokenA, tokenB).GetSpan());
         AddLiquidity(engine, router, tokenA, tokenB);
         Assert.True(Invoke(engine, pair, "getReserve0").GetInteger() > 0);
+
+        // Setter can withdraw the deploy fee.
+        var ownerBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
+        Invoke(engine, factory, "withdraw", Owner, fee);
+        Assert.Equal(fee, Invoke(engine, gas, "balanceOf", Owner).GetInteger() - ownerBefore);
+        Assert.Equal(0, Invoke(engine, gas, "balanceOf", factory).GetInteger());
     }
 }
