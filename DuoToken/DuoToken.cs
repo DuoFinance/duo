@@ -7,6 +7,7 @@ using Neo.SmartContract.Framework.Services;
 
 namespace DuoToken
 {
+    [DisplayName("DuoToken")]
     [ManifestExtra("Description", "Duo Token Contract")]
     [SupportedStandards("NEP-17")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]

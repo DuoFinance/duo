@@ -7,7 +7,7 @@ using System.ComponentModel;
 
 namespace DuoBondingCurve
 {
-    [DisplayName("Duo Bonding Curve")]
+    [DisplayName("DuoBondingCurve")]
     [ManifestExtra("Description", "Duo Fair Launchpad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
     [ContractPermission("*")]

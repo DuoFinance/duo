@@ -9,7 +9,7 @@ using Neo.SmartContract.Framework.Services;
 
 namespace DuoStaking
 {
-    [DisplayName("Duo Staking")]
+    [DisplayName("DuoStaking")]
     [ManifestExtra("Description", "Duo Multi-Pool Staking Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
     [ContractPermission("*")]

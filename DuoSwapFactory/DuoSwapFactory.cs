@@ -8,7 +8,7 @@ using System.ComponentModel;
 
 namespace DuoSwapFactory
 {
-    [DisplayName("DuoSwap Factory")]
+    [DisplayName("DuoSwapFactory")]
     [ManifestExtra("Description", "DuoSwap Factory Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
     [ContractPermission("*")]
