@@ -7,10 +7,10 @@ using Neo.SmartContract.Framework.Services;
 
 namespace DuoLaunchpad
 {
-    [ManifestExtra("Description", "DuoLaunchpad Series")]
+    [ManifestExtra("Description", "Duo Launchpad Series")]
     [SupportedStandards("NEP-17")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "onNEP17Payment" })]
+    [ContractPermission("*")]
 
     public class DuoLaunchpad : Nep17Token
     {

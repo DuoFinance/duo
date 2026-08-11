@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Numerics;
 using Neo;
 using Neo.SmartContract.Framework;
@@ -7,9 +8,10 @@ using Neo.SmartContract.Framework.Services;
 
 namespace DuoSwapRouter
 {
+    [DisplayName("DuoSwapRouter")]
     [ManifestExtra("Description", "DuoSwap Router Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "getPairHash", "getReserves", "balanceOf", "transfer", "approvedTransfer", "swap", "mint", "burn" })]
+    [ContractPermission("*")]
     public partial class DuoSwapRouterContract : SmartContract
     {
         private const long FEE_NUMERATOR = 997;

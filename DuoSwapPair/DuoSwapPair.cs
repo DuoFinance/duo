@@ -7,8 +7,9 @@ using Neo.SmartContract.Framework.Services;
 namespace DuoSwapPair
 {
     [ManifestExtra("Description", "DuoSwap Pair Contract")]
+    [SupportedStandards("NEP-17")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "balanceOf", "transfer", "getFeeTo", "onNEP17Payment" })]
+    [ContractPermission("*")]
     public partial class DuoSwapPairContract : SmartContract
     {
         private const long MINIMUM_LIQUIDITY = 1000;

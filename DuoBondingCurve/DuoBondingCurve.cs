@@ -3,24 +3,14 @@ using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using Neo.SmartContract.Framework.Attributes;
+using System.ComponentModel;
 
 namespace DuoBondingCurve
 {
-    [ManifestExtra("Description", "DuoBondingCurve - Fair LaunchPad")]
+    [DisplayName("Duo Bonding Curve")]
+    [ManifestExtra("Description", "Duo Fair Launchpad")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] {
-        "transfer",
-        "symbol",
-        "totalSupply",
-        "initialise",
-        "getDeployFee",
-        "getPairHash",
-        "addLiquidity",
-        "getReserves",
-        "mint",
-        "getReserve0",
-        "getReserve1",
-        "getFeeTo" })]
+    [ContractPermission("*")]
     public partial class DuoBondingCurve : SmartContract
     {
         #region Sale Creation

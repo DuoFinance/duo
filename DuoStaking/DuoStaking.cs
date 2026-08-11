@@ -9,9 +9,10 @@ using Neo.SmartContract.Framework.Services;
 
 namespace DuoStaking
 {
+    [DisplayName("Duo Staking")]
     [ManifestExtra("Description", "Duo Multi-Pool Staking Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "*" })]
+    [ContractPermission("*")]
     public class DuoStakingContract : SmartContract
     {
         private static readonly byte[] PoolPrefix = new byte[] { 0x01 };

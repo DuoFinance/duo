@@ -4,12 +4,14 @@ using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using Neo.SmartContract.Framework.Attributes;
+using System.ComponentModel;
 
 namespace DuoSwapFactory
 {
+    [DisplayName("DuoSwap Factory")]
     [ManifestExtra("Description", "DuoSwap Factory Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*", new[] { "symbol", "balanceOf", "transfer" })]
+    [ContractPermission("*")]
     public partial class DuoSwapFactoryContract : SmartContract
     {
         #region Deployment
