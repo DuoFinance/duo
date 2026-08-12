@@ -236,6 +236,82 @@ public class CrossContractTests
         Console.WriteLine("   contract-caller SwapTokensForExactTokens: ΔB=" + (tokenBAfter - tokenBBefore) + " ✓");
     }
 
+    [Fact]
+    public void FactoryClaimGAS_CrossContract_ForwardsRewardToFactory()
+    {
+        var (engine, factory, router, pair, tokenA, tokenB) = DeployBNeoSetup();
+
+        var gasHash = engine.Native.GAS.Hash;
+        var bneo = new UInt160(Invoke(engine, factory, "getBNeo").GetSpan());
+        BigInteger reward = 123_000_000;
+        var vl = engine.ProtocolSettings.StandbyValidators;
+        var m = vl.Count - (vl.Count - 1) / 3;
+        var va = Contract.CreateMultiSigRedeemScript(m, vl.ToArray()).ToScriptHash();
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, va, Owner);
+        Invoke(engine, gasHash, "transfer", va, Owner, reward, null);
+        engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+        Invoke(engine, gasHash, "transfer", Owner, bneo, reward, null);
+
+        BigInteger factoryBefore = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
+        BigInteger pairBefore = Invoke(engine, gasHash, "balanceOf", pair).GetInteger();
+
+        var result = Invoke(engine, factory, "claimGAS", pair);
+        Assert.True(result.GetBoolean());
+
+        // Factory -> pair -> bNEO mock -> GAS native chain delivered the reward.
+        Assert.Equal(reward, Invoke(engine, gasHash, "balanceOf", factory).GetInteger() - factoryBefore);
+        Assert.Equal(0, Invoke(engine, gasHash, "balanceOf", pair).GetInteger() - pairBefore);
+    }
+
+    [Fact]
+    public void FactoryClaimGAS_NonBNeoPair_Noop()
+    {
+        var (engine, factory, _, pair, tokenA, tokenB) = Setup();
+
+        var gasHash = engine.Native.GAS.Hash;
+        BigInteger factoryBefore = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
+
+        var result = Invoke(engine, factory, "claimGAS", pair);
+        Assert.True(result.GetBoolean());
+        Assert.Equal(factoryBefore, Invoke(engine, gasHash, "balanceOf", factory).GetInteger());
+    }
+
+    private static (TestEngine engine, UInt160 factory, UInt160 router, UInt160 pair, UInt160 tokenA, UInt160 tokenB) DeployBNeoSetup()
+    {
+        var (e, f, r, p, ta, tb) = Setup();
+
+        var (bneoNef, bneoManifest) = LoadContract("DuoMockBNeo");
+        var bneo = DeployContract(e, bneoNef, bneoManifest, null);
+        Invoke(e, f, "setBNeo", bneo);
+
+        var gasHash = e.Native.GAS.Hash;
+        var vl = e.ProtocolSettings.StandbyValidators;
+        var m = vl.Count - (vl.Count - 1) / 3;
+        var va = Contract.CreateMultiSigRedeemScript(m, vl.ToArray()).ToScriptHash();
+        var fee = Invoke(e, f, "getDeployFee").GetInteger();
+        e.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, va, Owner);
+        Invoke(e, gasHash, "transfer", va, Owner, fee, null);
+        e.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
+
+        var data = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = new ContractParameter[]
+            {
+                new(ContractParameterType.Hash160) { Value = bneo },
+                new(ContractParameterType.Hash160) { Value = ta },
+            }
+        };
+        e.Execute(gasHash.MakeScript("transfer",
+            new ContractParameter(ContractParameterType.Hash160) { Value = Owner },
+            new ContractParameter(ContractParameterType.Hash160) { Value = f },
+            new ContractParameter(ContractParameterType.Integer) { Value = fee }, data));
+
+        var pairRes = Invoke(e, f, "getPairHash", bneo, ta);
+        var bneoPair = new UInt160(pairRes.GetSpan());
+
+        return (e, f, r, bneoPair, ta, tb);
+    }
+
     private static (TestEngine engine, UInt160 factoryHash, UInt160 routerHash, UInt160 pairHash, UInt160 tokenA, UInt160 tokenB) Setup()
     {
         var engine = CreateEngine();
