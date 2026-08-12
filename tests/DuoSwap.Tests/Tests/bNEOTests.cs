@@ -143,6 +143,33 @@ public class bNEOTests
     }
 
     [Fact]
+    public void ClaimGAS_InvalidPairAddress_Fails()
+    {
+        var ex = Assert.ThrowsAny<Exception>(() => Invoke(_engine, _factory, "claimGAS", UInt160.Zero));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void ClaimGAS_BNeoNotSet_Noop()
+    {
+        BigInteger baseline = GasBalance(_factory);
+        var result = Invoke(_engine, _factory, "claimGAS", _bneoPair);
+        Assert.True(result.GetBoolean());
+        Assert.Equal(baseline, GasBalance(_factory));
+    }
+
+    [Fact]
+    public void ClaimGAS_NoReward_NoForward()
+    {
+        Invoke(_engine, _factory, "setBNeo", _bneo);
+        BigInteger baseline = GasBalance(_factory);
+        var result = Invoke(_engine, _factory, "claimGAS", _bneoPair);
+        Assert.True(result.GetBoolean());
+        Assert.Equal(baseline, GasBalance(_factory));
+        Assert.Equal(0, GasBalance(_bneoPair));
+    }
+
+    [Fact]
     public void ClaimGAS_NonBNeoPair_Noop()
     {
         var (tokenNef, tokenManifest) = LoadContract("DuoToken");
@@ -170,6 +197,7 @@ public class bNEOTests
         Assert.True(result.GetBoolean());
 
         Assert.Equal(baseline + reward, GasBalance(_factory));
+        Assert.Equal(0, GasBalance(_bneoPair));
     }
 
     [Fact]
@@ -192,6 +220,43 @@ public class bNEOTests
     #endregion
 
     #region Withdraw
+
+    [Fact]
+    public void Withdraw_InvalidAddress_Fails()
+    {
+        Invoke(_engine, _factory, "setBNeo", _bneo);
+        FundBNeo(100_000_000);
+        Invoke(_engine, _factory, "claimGAS", _bneoPair);
+
+        var ex = Assert.ThrowsAny<Exception>(() => Invoke(_engine, _factory, "withdraw", UInt160.Zero, 1));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Withdraw_ZeroAmount_NoBalance_Fails()
+    {
+        Invoke(_engine, _factory, "setBNeo", _bneo);
+        Invoke(_engine, _factory, "withdraw", Owner, 0);
+
+        var ex = Assert.ThrowsAny<Exception>(() => Invoke(_engine, _factory, "withdraw", Owner, 0));
+        Assert.Contains("ASSERT", ex.Message);
+    }
+
+    [Fact]
+    public void Withdraw_ToAnyValidAddress_Allowed()
+    {
+        Invoke(_engine, _factory, "setBNeo", _bneo);
+        BigInteger reward = 80_000_000;
+        FundBNeo(reward);
+        Invoke(_engine, _factory, "claimGAS", _bneoPair);
+
+        BigInteger userBefore = GasBalance(User);
+        BigInteger factoryBefore = GasBalance(_factory);
+        var result = Invoke(_engine, _factory, "withdraw", User, reward);
+        Assert.True(result.GetBoolean());
+        Assert.Equal(userBefore + reward, GasBalance(User));
+        Assert.Equal(factoryBefore - reward, GasBalance(_factory));
+    }
 
     [Fact]
     public void Withdraw_FullBalance_WhenAmountZero()
