@@ -171,26 +171,19 @@ namespace DuoSwapFactory
         }
         #endregion
 
-        #region Claim GAS From BNeo Pairs
+        #region Claim GAS From BNeo Pair
         /// <summary>
-        /// Harvest claimed GAS from every bNEO pair to this factory.
-        /// Setter only. Each bNEO pair forwards its accrued GAS reward here.
+        /// Claim GAS from bNEO for a single specified pair.
         /// </summary>
-        public static bool ClaimGasAll()
+        public static bool ClaimGAS(UInt160 pair)
         {
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-
-            UInt160 bneo = GetBNeo();
-            var iterator = (Iterator<KeyValue>)StorageFind(PAIR_PREFIX);
-            while (iterator.Next())
-            {
-                var keyValue = iterator.Value;
-                UInt160 pair = keyValue.Value;
-                if (!pair.IsValid || pair.IsZero || !bneo.IsAddress()) continue;
-                Contract.Call(pair, "claimGASFrombNEO", CallFlags.All, new object[0]);
-            }
+            Assert(pair.IsAddress(), "Invalid Address.");
+            Contract.Call(pair, "claimGASFrombNEO", CallFlags.All, new object[0]);
             return true;
         }
+
+
         #endregion
 
         #region Events
