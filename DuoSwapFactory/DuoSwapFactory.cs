@@ -22,7 +22,7 @@ namespace DuoSwapFactory
         /// </summary>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
-            Assert(data.Length == 2, "Invalid Data.");
+            if (data is null || data.Length != 2) return;
             Assert(Runtime.CallingScriptHash == GAS.Hash, "Wrong Calling Scripthash.");
             Assert(amount == GetDeployFee(), "Wrong Deploy Fee.");
             Assert(from.IsValid && !from.IsZero, "Invalid Sender.");
