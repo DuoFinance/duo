@@ -18,7 +18,7 @@ namespace DuoSwapFactory
 
         /// <summary>
         /// Trading pair deployment procceeds once this contract receive the deployFee in GAS from users.
-        /// The deployFee stays in the factory and is controlled by the Setter via Withdraw.
+        /// The deployFee stays in the factory and is controlled by the Setter via ClaimGAS.
         /// </summary>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {

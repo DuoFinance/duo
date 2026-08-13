@@ -66,9 +66,11 @@ public class DebugBNeoTest
         Invoke(engine, gasHash, "transfer", Owner, bneo, 200_000_000, null);
 
         BigInteger before = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
-        var claimed = Invoke(engine, factory, "claimGAS", pair);
+        BigInteger recipientBefore = Invoke(engine, gasHash, "balanceOf", Owner).GetInteger();
+        var claimed = Invoke(engine, factory, "claimGAS", pair, Owner);
         Assert.True(claimed.GetBoolean());
         BigInteger after = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
-        Assert.Equal(200_000_000, after - before);
+        Assert.Equal(0, after);
+        Assert.Equal(before + 200_000_000, Invoke(engine, gasHash, "balanceOf", Owner).GetInteger() - recipientBefore);
     }
 }

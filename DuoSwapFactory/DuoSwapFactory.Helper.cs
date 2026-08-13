@@ -149,37 +149,38 @@ namespace DuoSwapFactory
         }
         #endregion
 
-        #region GAS Withdraw
-        /// <summary>
-        /// Withdraw accumulated GAS (deploy fees and GAS claimed from bNEO pairs) held by this factory.
-        /// Setter only. amount == 0 withdraws the full GAS balance.
-        /// </summary>
-        public static bool Withdraw(UInt160 to, BigInteger amount)
-        {
-            Assert(to.IsAddress(), "Invalid Address.");
-            Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-
-            BigInteger balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
-            BigInteger withdrawAmount = amount == 0 ? balance : amount;
-            Assert(withdrawAmount > 0 && withdrawAmount <= balance, "INVALID_AMOUNT");
-
-            bool result = GAS.Transfer(Runtime.ExecutingScriptHash, to, withdrawAmount);
-            Assert(result, "Withdraw Failed.");
-
-            onWithdraw(to, withdrawAmount);
-            return true;
-        }
-        #endregion
-
         #region Claim GAS From BNeo Pair
         /// <summary>
-        /// Claim GAS from bNEO for a single specified pair.
+        /// Claim GAS from a bNEO pair and transfer the factory balance to the recipient.
+        /// Pass UInt160.Zero as pair to withdraw the factory balance without a pair claim.
         /// </summary>
-        public static bool ClaimGAS(UInt160 pair)
+        public static bool ClaimGAS(UInt160 pair, UInt160 to)
         {
             Assert(Runtime.CheckWitness(GetSetter()), "Forbidden.");
-            Assert(pair.IsAddress(), "Invalid Address.");
-            Contract.Call(pair, "claimGASFrombNEO", CallFlags.All, new object[0]);
+            Assert(to.IsAddress(), "Invalid Address.");
+            bool withdrawOnly = pair == UInt160.Zero;
+            Assert(withdrawOnly || pair.IsAddress(), "Invalid Pair Address.");
+
+            if (withdrawOnly)
+            {
+                BigInteger withdrawBalance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
+                if (withdrawBalance == 0) return true;
+                bool withdrawResult = GAS.Transfer(Runtime.ExecutingScriptHash, to, withdrawBalance);
+                Assert(withdrawResult, "Withdraw Failed.");
+                return true;
+            }
+
+            bool ok = (bool)Contract.Call(pair, "claimGASFrombNEO", CallFlags.All, new object[0]);
+            // Non-bNEO pairs deliberately return false from claimGASFrombNEO.
+            // Keep this operation a no-op for those pairs and do not withdraw
+            // unrelated GAS already held by the factory.
+            if (!ok) return true;
+
+            BigInteger balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
+            if (balance == 0) return true;
+
+            bool result = GAS.Transfer(Runtime.ExecutingScriptHash, to, balance);
+            Assert(result, "Withdraw Failed.");
             return true;
         }
 
@@ -206,10 +207,6 @@ namespace DuoSwapFactory
         [DisplayName("SetBNeo")]
         public static event SetBNeoEvent onSetBNeo;
         public delegate void SetBNeoEvent(UInt160 bneo);
-
-        [DisplayName("Withdraw")]
-        public static event WithdrawEvent onWithdraw;
-        public delegate void WithdrawEvent(UInt160 to, BigInteger amount);
 
         [DisplayName("OwnershipTransferred")]
         public static event OnOwnershipTransferredEvent onOwnershipTransferred;

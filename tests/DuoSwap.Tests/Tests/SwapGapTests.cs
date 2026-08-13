@@ -355,9 +355,9 @@ public class SwapGapTests
         AddLiquidity(engine, router, tokenA, tokenB);
         Assert.True(Invoke(engine, pair, "getReserve0").GetInteger() > 0);
 
-        // Setter can withdraw the deploy fee.
+        // Setter can claim and transfer the deploy fee.
         var ownerBefore = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
-        Invoke(engine, factory, "withdraw", Owner, fee);
+        Invoke(engine, factory, "claimGAS", UInt160.Zero, Owner);
         Assert.Equal(fee, Invoke(engine, gas, "balanceOf", Owner).GetInteger() - ownerBefore);
         Assert.Equal(0, Invoke(engine, gas, "balanceOf", factory).GetInteger());
     }

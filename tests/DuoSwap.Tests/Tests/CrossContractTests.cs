@@ -237,7 +237,7 @@ public class CrossContractTests
     }
 
     [Fact]
-    public void FactoryClaimGAS_CrossContract_ForwardsRewardToFactory()
+    public void FactoryClaimGAS_CrossContract_ForwardsRewardToRecipient()
     {
         var (engine, factory, router, pair, tokenA, tokenB) = DeployBNeoSetup();
 
@@ -255,11 +255,13 @@ public class CrossContractTests
         BigInteger factoryBefore = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
         BigInteger pairBefore = Invoke(engine, gasHash, "balanceOf", pair).GetInteger();
 
-        var result = Invoke(engine, factory, "claimGAS", pair);
+        BigInteger recipientBefore = Invoke(engine, gasHash, "balanceOf", Owner).GetInteger();
+        var result = Invoke(engine, factory, "claimGAS", pair, Owner);
         Assert.True(result.GetBoolean());
 
         // Factory -> pair -> bNEO mock -> GAS native chain delivered the reward.
-        Assert.Equal(reward, Invoke(engine, gasHash, "balanceOf", factory).GetInteger() - factoryBefore);
+        Assert.Equal(0, Invoke(engine, gasHash, "balanceOf", factory).GetInteger());
+        Assert.Equal(factoryBefore + reward, Invoke(engine, gasHash, "balanceOf", Owner).GetInteger() - recipientBefore);
         Assert.Equal(0, Invoke(engine, gasHash, "balanceOf", pair).GetInteger() - pairBefore);
     }
 
@@ -271,7 +273,7 @@ public class CrossContractTests
         var gasHash = engine.Native.GAS.Hash;
         BigInteger factoryBefore = Invoke(engine, gasHash, "balanceOf", factory).GetInteger();
 
-        var result = Invoke(engine, factory, "claimGAS", pair);
+        var result = Invoke(engine, factory, "claimGAS", pair, Owner);
         Assert.True(result.GetBoolean());
         Assert.Equal(factoryBefore, Invoke(engine, gasHash, "balanceOf", factory).GetInteger());
     }
