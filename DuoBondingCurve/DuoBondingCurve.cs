@@ -23,7 +23,7 @@ namespace DuoBondingCurve
             string discord,
             string x,
             string telegram,
-            string repoUrl
+            string projUrl
             )
         {
             Enter();
@@ -39,7 +39,7 @@ namespace DuoBondingCurve
                 discord,
                 x,
                 telegram,
-                repoUrl,
+                projUrl,
                 Tx.Sender);
             Exit();
         }
@@ -54,7 +54,7 @@ namespace DuoBondingCurve
             string discord,
             string x,
             string telegram,
-            string repoUrl,
+            string projUrl,
             UInt160 creator
             )
         {
@@ -65,7 +65,7 @@ namespace DuoBondingCurve
             Assert(discord == null || discord.Length <= 128, "INVALID_DISCORD_TOO_LONG");
             Assert(x == null || x.Length <= 128, "INVALID_X_TOO_LONG");
             Assert(telegram == null || telegram.Length <= 128, "INVALID_TELEGRAM_TOO_LONG");
-            Assert(repoUrl == null || repoUrl.Length <= 256, "INVALID_REPOURL_TOO_LONG");
+            Assert(projUrl == null || projUrl.Length <= 256, "INVALID_PROJURL_TOO_LONG");
 
             var minimumDeploymentFee = ContractManagement.GetMinimumDeploymentFee();
             Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
@@ -74,18 +74,18 @@ namespace DuoBondingCurve
             Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
             byte[] nef = GetLaunchpadNef();
-            string manifest = BuildImmutableTokenManifest(name, discord, x, telegram, repoUrl);
-            Contract newContract = ContractManagement.Deploy(nef.ToByteString(), manifest);
+            string manifest = BuildImmutableTokenManifest(name, discord, x, telegram, projUrl);
+            Contract newContract = ContractManagement.Deploy(
+                nef.ToByteString(),
+                manifest,
+                new object[] { Runtime.ExecutingScriptHash, decimals, symbol, totalSupply });
             Assert(newContract.Hash.IsValid && !newContract.Hash.IsZero, "TOKEN_DEPLOY_FAILED");
             UInt160 tokenHash = newContract.Hash;
 
-            Contract.Call(tokenHash, "initialise", CallFlags.All,
-                new object[] { Runtime.ExecutingScriptHash, (byte)decimals, symbol, totalSupply });
-
             BigInteger pSquared = graduationBps * graduationBps;
             BigInteger vToken = totalSupply * pSquared / (10000 * twoPminusOne);
-            BigInteger vGas = targetRaise * (10000 - graduationBps) / twoPminusOne;
-            Assert(vToken > 0 && vGas > 0, "INVALID_VIRTUAL_RESERVES");
+            BigInteger vGAS = targetRaise * (10000 - graduationBps) / twoPminusOne;
+            Assert(vToken > 0 && vGAS > 0, "INVALID_VIRTUAL_RESERVES");
 
             SaleInfo info = new SaleInfo
             {
@@ -93,7 +93,7 @@ namespace DuoBondingCurve
                 TokensSold = 0,
                 GASRaised = 0,
                 TargetRaise = targetRaise,
-                VirtualGas = vGas,
+                VirtualGAS = vGAS,
                 VirtualToken = vToken,
                 GraduationBps = graduationBps,
                 Graduated = false
@@ -158,7 +158,7 @@ namespace DuoBondingCurve
 
         /// Create a new sale and buy tokens in one atomic transaction.
         /// data[0] = "CreateAndBuy", data[1] = minTokensOut (optional),
-        /// data[2..9] = name, symbol, targetRaise, graduationBps, discord, x, telegram, repoUrl
+        /// data[2..9] = name, symbol, targetRaise, graduationBps, discord, x, telegram, projUrl
         private static void ProcessCreateAndBuy(UInt160 buyer, BigInteger gasAmount, object[] data)
         {
             Assert(data.Length >= 10, "INVALID_CREATE_DATA");
@@ -173,7 +173,7 @@ namespace DuoBondingCurve
             string discord = (string)data[6];
             string x = (string)data[7];
             string telegram = (string)data[8];
-            string repoUrl = (string)data[9];
+            string projUrl = (string)data[9];
 
             BigInteger totalSupply = DEFAULT_TOTAL_SUPPLY;
             BigInteger decimals = DEFAULT_DECIMALS;
@@ -188,7 +188,7 @@ namespace DuoBondingCurve
                 discord,
                 x,
                 telegram,
-                repoUrl,
+                projUrl,
                 buyer);
 
             ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
@@ -196,7 +196,7 @@ namespace DuoBondingCurve
 
         
         /// Buy tokens with GAS. If purchase reaches graduation cap,
-        /// triggers FinalizeSale. Excess GAS refunded automatically.
+        /// triggers Graduate. Excess GAS refunded automatically.
         private static void ProcessBuy(
             UInt160 buyer,
             UInt160 tokenHash,
@@ -222,7 +222,7 @@ namespace DuoBondingCurve
             }
 
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger gasReserve = sale.VirtualGAS + sale.GASRaised;
             BigInteger tokens = GetAmountOut(gasReserve, tokenReserve, netGasAmount);
 
             BigInteger maxTokens = DEFAULT_TOTAL_SUPPLY * sale.GraduationBps / 10000;
@@ -289,7 +289,7 @@ namespace DuoBondingCurve
             // Graduation is defined by the configured token allocation cap.
             if (sale.TokensSold >= maxTokens)
             {
-                FinalizeSale(tokenHash, sale);
+                Graduate(tokenHash, sale);
             }
             else
             {
@@ -324,12 +324,13 @@ namespace DuoBondingCurve
 
             SaleInfo sale = GetSale(tokenHash);
             Assert(SaleExists(sale) && !sale.Graduated, "SALE_GRADUATED");
+            Assert(tokenAmount <= sale.TokensSold, "INSUFFICIENT_SOLD");
 
             UInt160 feeTo = (UInt160)Contract.Call(GetFactory(), "getFeeTo", CallFlags.ReadOnly);
             bool feeOn = feeTo != UInt160.Zero;
 
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
-            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger gasReserve = sale.VirtualGAS + sale.GASRaised;
             BigInteger gasReturn = GetAmountOut(tokenReserve, gasReserve, tokenAmount);
             Assert(gasReturn > 0, "ZERO_GAS");
             Assert(gasReturn <= sale.GASRaised, "INSUFFICIENT_GAS");
@@ -370,7 +371,7 @@ namespace DuoBondingCurve
 
         #endregion
 
-        #region Finalize
+        #region Graduation
         /// Graduation flow, three paths:
         ///
         ///   1. Pair exists with non-zero reserves (anti-sniping):
@@ -381,7 +382,7 @@ namespace DuoBondingCurve
         ///
         ///   3. Pair does not exist (needs deployment):
         ///       Deduct deploy fee, deploy pair, router.addLiquidity → burn LP to zero address
-        private static void FinalizeSale(UInt160 tokenHash, SaleInfo sale)
+        private static void Graduate(UInt160 tokenHash, SaleInfo sale)
         {
             Assert(IsEntered(), "NOT_ENTERED");
             UInt160 factory = GetFactory();

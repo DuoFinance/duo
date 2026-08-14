@@ -31,7 +31,7 @@ public class DuoBondingCurveFuzzTests
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;
-        public BigInteger VirtualGas;
+        public BigInteger VirtualGAS;
         public BigInteger VirtualToken;
         public BigInteger GraduationBps;
         public bool Graduated;
@@ -46,7 +46,7 @@ public class DuoBondingCurveFuzzTests
             TokensSold = map[(BigInteger)1].GetInteger(),
             GASRaised = map[(BigInteger)2].GetInteger(),
             TargetRaise = map[(BigInteger)3].GetInteger(),
-            VirtualGas = map[(BigInteger)4].GetInteger(),
+            VirtualGAS = map[(BigInteger)4].GetInteger(),
             VirtualToken = map[(BigInteger)5].GetInteger(),
             GraduationBps = map[(BigInteger)6].GetInteger(),
             Graduated = map[(BigInteger)7].GetBoolean(),
@@ -83,7 +83,7 @@ public class DuoBondingCurveFuzzTests
 
     private static BigInteger ComputeK(VmSaleInfo s)
     {
-        return (s.VirtualGas + s.GASRaised) * (s.VirtualToken - s.TokensSold);
+        return (s.VirtualGAS + s.GASRaised) * (s.VirtualToken - s.TokensSold);
     }
 
     private static UInt160 SetupRandomSale(TestEngine engine, UInt160 bondingCurve,
@@ -91,8 +91,8 @@ public class DuoBondingCurveFuzzTests
         BigInteger targetRaise, BigInteger graduationBps)
     {
         var (ln, lm) = LoadContract("DuoLaunchpad");
-        var tokenHash = DeployContract(engine, ln, lm, null);
-        Invoke(engine, tokenHash, "initialise", bondingCurve, decimals, symbol, totalSupply);
+        var tokenHash = DeployContract(engine, ln, lm,
+            new object[] { bondingCurve, (int)decimals, symbol, totalSupply });
 
         // Write sale via storage (bypasses CreateSale to avoid deploying real NEF)
         var bcState = engine.Native.ContractManagement.GetContract(bondingCurve);
@@ -168,7 +168,7 @@ public class DuoBondingCurveFuzzTests
             var expectedVGas = ComputeVGas(targetRaise, graduationBps);
 
             Assert.Equal(expectedVToken, sale.VirtualToken);
-            Assert.Equal(expectedVGas, sale.VirtualGas);
+            Assert.Equal(expectedVGas, sale.VirtualGAS);
         }
     }
 
@@ -316,7 +316,7 @@ public class DuoBondingCurveFuzzTests
                 totalSupply, 8, "K" + symbolNum, targetRaise, graduationBps);
 
             var saleBefore = GetSale(engine, bondingCurve, tokenHash);
-            var initialK = saleBefore.VirtualGas * saleBefore.VirtualToken;
+            var initialK = saleBefore.VirtualGAS * saleBefore.VirtualToken;
 
             // Simulate multiple buys via contract (write updated sale to storage)
             var bcState = engine.Native.ContractManagement.GetContract(bondingCurve);
@@ -354,7 +354,7 @@ public class DuoBondingCurveFuzzTests
                 map[(BigInteger)1] = new Integer(current.TokensSold);
                 map[(BigInteger)2] = new Integer(current.GASRaised);
                 map[(BigInteger)3] = new Integer(current.TargetRaise);
-                map[(BigInteger)4] = new Integer(current.VirtualGas);
+                map[(BigInteger)4] = new Integer(current.VirtualGAS);
                 map[(BigInteger)5] = new Integer(current.VirtualToken);
                 map[(BigInteger)6] = new Integer(current.GraduationBps);
                 map[(BigInteger)7] = Boolean.False;
@@ -414,8 +414,8 @@ public class DuoBondingCurveFuzzTests
                 // Compute actual gas using the on-chain formula inverse
                 if (raw <= 0) continue;
                 BigInteger tokenReserve = sale.VirtualToken - 0;
-                BigInteger gasReserve = sale.VirtualGas + 0;
-                BigInteger k = sale.VirtualGas * sale.VirtualToken;
+                BigInteger gasReserve = sale.VirtualGAS + 0;
+                BigInteger k = sale.VirtualGAS * sale.VirtualToken;
                 BigInteger newTokenReserve = tokenReserve - raw;
                 if (newTokenReserve <= 0) continue;
                 BigInteger newGasReserve = k / newTokenReserve;
@@ -435,7 +435,7 @@ public class DuoBondingCurveFuzzTests
             writeMap[(BigInteger)2] = new Integer(sale.TokensSold);
             writeMap[(BigInteger)3] = new Integer(sale.GASRaised);
             writeMap[(BigInteger)4] = new Integer(sale.TargetRaise);
-            writeMap[(BigInteger)5] = new Integer(sale.VirtualGas);
+            writeMap[(BigInteger)5] = new Integer(sale.VirtualGAS);
             writeMap[(BigInteger)6] = new Integer(sale.VirtualToken);
             writeMap[(BigInteger)7] = new Integer(sale.GraduationBps);
             writeMap[(BigInteger)8] = Boolean.False;
@@ -491,8 +491,8 @@ public class DuoBondingCurveFuzzTests
             catch { continue; }
             // Compute actual buy via formula
             BigInteger tokenReserve = sale.VirtualToken;
-            BigInteger gasReserve = sale.VirtualGas;
-            BigInteger k = sale.VirtualGas * sale.VirtualToken;
+            BigInteger gasReserve = sale.VirtualGAS;
+            BigInteger k = sale.VirtualGAS * sale.VirtualToken;
             BigInteger newGasReserve = gasReserve + gasIn;
             BigInteger newTokenReserve = k / newGasReserve;
             BigInteger tokensOut = tokenReserve - newTokenReserve;
@@ -514,7 +514,7 @@ public class DuoBondingCurveFuzzTests
             buyMap[(BigInteger)2] = new Integer(sale.TokensSold);
             buyMap[(BigInteger)3] = new Integer(sale.GASRaised);
             buyMap[(BigInteger)4] = new Integer(sale.TargetRaise);
-            buyMap[(BigInteger)5] = new Integer(sale.VirtualGas);
+            buyMap[(BigInteger)5] = new Integer(sale.VirtualGAS);
             buyMap[(BigInteger)6] = new Integer(sale.VirtualToken);
             buyMap[(BigInteger)7] = new Integer(sale.GraduationBps);
             buyMap[(BigInteger)8] = Boolean.False;
@@ -560,7 +560,7 @@ public class DuoBondingCurveFuzzTests
             var sale = GetSale(engine, bondingCurve, tokenHash);
 
             Assert.True(sale.VirtualToken > 0, $"bps={bps}: vToken <= 0");
-            Assert.True(sale.VirtualGas >= 0, $"bps={bps}: vGas < 0");
+            Assert.True(sale.VirtualGAS >= 0, $"bps={bps}: vGas < 0");
 
             BigInteger maxTokens = totalSupply * bps / 10000;
             Assert.True(sale.VirtualToken > maxTokens,
@@ -570,7 +570,7 @@ public class DuoBondingCurveFuzzTests
             BigInteger expectedVToken = ComputeVToken(totalSupply, bps);
             BigInteger expectedVGas = ComputeVGas(targetRaise, bps);
             Assert.Equal(expectedVToken, sale.VirtualToken);
-            Assert.Equal(expectedVGas, sale.VirtualGas);
+            Assert.Equal(expectedVGas, sale.VirtualGAS);
         }
     }
 
@@ -596,7 +596,7 @@ public class DuoBondingCurveFuzzTests
             var sale = GetSale(engine, bondingCurve, tokenHash);
 
             Assert.True(sale.VirtualToken > 0, $"bps={bps}: vToken <= 0");
-            Assert.True(sale.VirtualGas >= 0, $"bps={bps}: vGas < 0");
+            Assert.True(sale.VirtualGAS >= 0, $"bps={bps}: vGas < 0");
 
             BigInteger maxTokens = totalSupply * bps / 10000;
             Assert.True(sale.VirtualToken > maxTokens,
@@ -804,7 +804,7 @@ public class DuoBondingCurveFuzzTests
             // (A closer landing is fragile: AmountIn near maxTokens rounds up to the same
             // gas as AmountIn(maxTokens), which would graduate the pre-buy itself.)
             BigInteger targetRemaining = maxTokens / 20;
-            BigInteger preGas = AmountIn(sale.VirtualGas, sale.VirtualToken, maxTokens - targetRemaining);
+            BigInteger preGas = AmountIn(sale.VirtualGAS, sale.VirtualToken, maxTokens - targetRemaining);
             Assert.True(preGas > 0, $"bps={bps}: preGas<=0");
             Buy(engine, bondingCurve, tokenHash, Owner, preGas);
 
@@ -815,7 +815,7 @@ public class DuoBondingCurveFuzzTests
                 $"bps={bps}: remaining={remaining} (expected 0 < remaining < {maxTokens / 10})");
 
             // The final buy must pay exactly the curve minimum for the remaining tokens (fee-off).
-            BigInteger gasReserve = before.VirtualGas + before.GASRaised;
+            BigInteger gasReserve = before.VirtualGAS + before.GASRaised;
             BigInteger tokenReserve = before.VirtualToken - before.TokensSold;
             BigInteger expected = AmountIn(gasReserve, tokenReserve, remaining);
 
@@ -859,7 +859,7 @@ public class DuoBondingCurveFuzzTests
 
             // Pre-buy to ~95% of maxTokens (fee-on applies to the pre-buy too).
             BigInteger targetRemaining = maxTokens / 20;
-            BigInteger preGas = AmountIn(sale.VirtualGas, sale.VirtualToken, maxTokens - targetRemaining);
+            BigInteger preGas = AmountIn(sale.VirtualGAS, sale.VirtualToken, maxTokens - targetRemaining);
             Assert.True(preGas > 0, $"bps={bps}: preGas<=0");
             Buy(engine, bondingCurve, tokenHash, Owner, preGas);
 
@@ -869,7 +869,7 @@ public class DuoBondingCurveFuzzTests
             Assert.True(remaining > 0 && remaining < maxTokens / 10,
                 $"bps={bps}: remaining={remaining} (expected 0 < remaining < {maxTokens / 10})");
 
-            BigInteger gasReserve = before.VirtualGas + before.GASRaised;
+            BigInteger gasReserve = before.VirtualGAS + before.GASRaised;
             BigInteger tokenReserve = before.VirtualToken - before.TokensSold;
             BigInteger netActualGas = AmountIn(gasReserve, tokenReserve, remaining);
             BigInteger actualGas = (netActualGas * FEE_DENOMINATOR + (FEE_DENOMINATOR - FEE_FACTOR - 1)) / (FEE_DENOMINATOR - FEE_FACTOR);

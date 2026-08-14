@@ -10,24 +10,20 @@ using static TestUtils;
 public class LaunchpadTests
 {
     [Fact]
-    public void Launchpad_Initialise_Succeeds_And_Enforces_Constraints()
+    public void Launchpad_Deploy_InitialisesAtomically()
     {
         var engine = CreateEngine();
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         // 1. Deploy DuoLaunchpad
         var (nef, manifest) = LoadContract("DuoLaunchpad");
-        var hash = DeployContract(engine, nef, manifest, null);
-
-        // 2. Initialise DuoLaunchpad
         var decimals = (byte)8;
         var symbol = "LAUNCH";
         var supply = new BigInteger(100_000_000_000_000); // 1,000,000 tokens with 8 decimals
-        
-        // Initialise
-        Invoke(engine, hash, "initialise", User, decimals, symbol, supply);
+        var hash = DeployContract(engine, nef, manifest,
+            new object[] { User, 8, symbol, supply });
 
-        // Verify state after initialisation
+        // Verify state after deployment
         var actualDecimals = Invoke(engine, hash, "decimals").GetInteger();
         Assert.Equal(decimals, actualDecimals);
 
@@ -40,10 +36,6 @@ public class LaunchpadTests
         var totalSupply = Invoke(engine, hash, "totalSupply").GetInteger();
         Assert.Equal(supply, totalSupply);
 
-        // 3. Try to initialise again, should fail
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, hash, "initialise", Owner, decimals, symbol, supply));
-        Assert.Contains("ASSERT", ex.Message);
     }
 
     [Fact]
@@ -53,12 +45,10 @@ public class LaunchpadTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (nef, manifest) = LoadContract("DuoLaunchpad");
-        var hash = DeployContract(engine, nef, manifest, null);
-
-        var decimals = (byte)8;
         var symbol = "LAUNCH";
         var supply = new BigInteger(100_000_000_000_000);
-        Invoke(engine, hash, "initialise", Owner, decimals, symbol, supply);
+        var hash = DeployContract(engine, nef, manifest,
+            new object[] { Owner, 8, symbol, supply });
 
         var transferAmount = new BigInteger(1_000_000_000_000);
         Invoke(engine, hash, "transfer", Owner, User, transferAmount, null);
@@ -73,12 +63,10 @@ public class LaunchpadTests
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
 
         var (nef, manifest) = LoadContract("DuoLaunchpad");
-        var hash = DeployContract(engine, nef, manifest, null);
-
-        var decimals = (byte)8;
         var symbol = "LAUNCH";
         var supply = new BigInteger(100_000_000_000_000);
-        Invoke(engine, hash, "initialise", Owner, decimals, symbol, supply);
+        var hash = DeployContract(engine, nef, manifest,
+            new object[] { Owner, 8, symbol, supply });
 
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
         var result = Invoke(engine, hash, "transfer", User, Owner, supply, null);

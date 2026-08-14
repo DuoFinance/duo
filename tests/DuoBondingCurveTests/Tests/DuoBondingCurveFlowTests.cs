@@ -204,7 +204,7 @@ public class DuoBondingCurveFlowTests
         BigInteger Gross(BigInteger sellAmount)
         {
             var sale = getSale(engine, bondingCurve, tokenHash);
-            BigInteger gasReserve = sale.VirtualGas + sale.GASRaised;
+            BigInteger gasReserve = sale.VirtualGAS + sale.GASRaised;
             BigInteger tokenReserve = sale.VirtualToken - sale.TokensSold;
             return gasReserve * sellAmount / (tokenReserve + sellAmount);
         }
@@ -266,7 +266,7 @@ public class DuoBondingCurveFlowTests
         var gasAfter = Invoke(engine, gas, "balanceOf", Owner).GetInteger();
         BigInteger gasSpent = gasBefore - gasAfter;
 
-        BigInteger gasReserve = saleBefore.VirtualGas + saleBefore.GASRaised;
+        BigInteger gasReserve = saleBefore.VirtualGAS + saleBefore.GASRaised;
         BigInteger tokenReserve = saleBefore.VirtualToken - saleBefore.TokensSold;
         BigInteger expectedActualGas = gasReserve * remainingTokens / (tokenReserve - remainingTokens);
         if (gasReserve * remainingTokens % (tokenReserve - remainingTokens) != 0)
@@ -317,11 +317,11 @@ public class DuoBondingCurveFlowTests
             "TST", (BigInteger)100_000_000_000, (BigInteger)5001);
 
         var saleInitial = getSale(engine, bondingCurve, tokenHash);
-        BigInteger idealK = saleInitial.VirtualGas * saleInitial.VirtualToken;
+        BigInteger idealK = saleInitial.VirtualGAS * saleInitial.VirtualToken;
 
         BuyTokens(engine, bondingCurve, tokenHash, Owner, 20_000_000_000);
         var saleAfterBuy = getSale(engine, bondingCurve, tokenHash);
-        BigInteger actualKAfterBuy = (saleAfterBuy.VirtualGas + saleAfterBuy.GASRaised) *
+        BigInteger actualKAfterBuy = (saleAfterBuy.VirtualGAS + saleAfterBuy.GASRaised) *
                                       (saleAfterBuy.VirtualToken - saleAfterBuy.TokensSold);
 
         BigInteger tolerance = idealK / 10000 + 1;
@@ -333,7 +333,7 @@ public class DuoBondingCurveFlowTests
         {
             SellTokens(engine, bondingCurve, tokenHash, Owner, halfTokens);
             var saleAfterSell = getSale(engine, bondingCurve, tokenHash);
-            BigInteger actualKAfterSell = (saleAfterSell.VirtualGas + saleAfterSell.GASRaised) *
+            BigInteger actualKAfterSell = (saleAfterSell.VirtualGAS + saleAfterSell.GASRaised) *
                                             (saleAfterSell.VirtualToken - saleAfterSell.TokensSold);
             Assert.True(BigInteger.Abs(actualKAfterSell - idealK) <= tolerance,
                 $"K should be approx constant after sell. ideal={idealK}, actual={actualKAfterSell}");
@@ -345,12 +345,11 @@ public class DuoBondingCurveFlowTests
         string symbol,
         BigInteger targetRaise, BigInteger graduationBps)
     {
-        BigInteger rawSupply = 100000000000000000; byte decimals = 8;
+        BigInteger rawSupply = 100000000000000000;
 
         var (ln, lm) = LoadContract("DuoLaunchpad");
-        var tokenHash = DeployContract(engine, ln, lm, null);
-
-        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, rawSupply);
+        var tokenHash = DeployContract(engine, ln, lm,
+            new object[] { bondingCurve, 8, symbol, rawSupply });
 
         return WriteSaleToStorage(engine, bondingCurve, tokenHash, rawSupply, symbol, targetRaise, graduationBps);
     }
@@ -432,7 +431,7 @@ public class DuoBondingCurveFlowTests
             TokensSold = map[(BigInteger)1].GetInteger(),
             GASRaised = map[(BigInteger)2].GetInteger(),
             TargetRaise = map[(BigInteger)3].GetInteger(),
-            VirtualGas = map[(BigInteger)4].GetInteger(),
+            VirtualGAS = map[(BigInteger)4].GetInteger(),
             VirtualToken = map[(BigInteger)5].GetInteger(),
             GraduationBps = map[(BigInteger)6].GetInteger(),
             Graduated = map[(BigInteger)7].GetBoolean()
@@ -463,7 +462,7 @@ public class DuoBondingCurveFlowTests
         public BigInteger TokensSold;
         public BigInteger GASRaised;
         public BigInteger TargetRaise;
-        public BigInteger VirtualGas;
+        public BigInteger VirtualGAS;
         public BigInteger VirtualToken;
         public BigInteger GraduationBps;
         public bool Graduated;

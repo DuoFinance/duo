@@ -34,13 +34,12 @@ public class DebugSupplyTest
         int bcId = bcState.Id;
 
         var (ln, lm) = LoadContract("DuoLaunchpad");
-        var tokenHash = DeployContract(engine, ln, lm, null);
-
         BigInteger totalSupply = 1_000_000_000;
         byte decimals = 8;
         BigInteger rawSupply = totalSupply * BigInteger.Pow(10, decimals);
         string symbol = "TST";
-        Invoke(engine, tokenHash, "initialise", bondingCurve, (byte)decimals, symbol, rawSupply);
+        var tokenHash = DeployContract(engine, ln, lm,
+            new object[] { bondingCurve, 8, symbol, rawSupply });
 
         BigInteger targetRaise = 100_000_000_000;
         BigInteger graduationBps = 5001;

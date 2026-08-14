@@ -7,7 +7,7 @@ using Neo.SmartContract.Framework.Attributes;
 namespace ReentrancyAttack
 {
     [ManifestExtra("Description", "Reentrancy Attack Test Contract")]
-    [ContractPermission("*", new[] { "transfer", "balanceOf", "createSale" })]
+    [ContractPermission("*", new[] { "transfer", "balanceOf", "createSale", "onNEP17Payment" })]
     public class ReentrancyAttack : SmartContract
     {
         private static StorageMap Store => new(Storage.CurrentContext, "RA");
@@ -28,18 +28,29 @@ namespace ReentrancyAttack
         private static int GetReentryType() => (int)(BigInteger)Store.Get("reentryType");
         private static void SetReentryType(int t) => Store.Put("reentryType", t);
 
-        // 1 = reenter via buy (GAS Transfer)
-        // 2 = reenter via createSale (direct call)
+        // 1 = reenter via buy (GAS transfer during sell)
+        // 2 = reenter via createSale (GAS callback during sell)
+        // 3 = reenter from the token recipient callback during buy
         public static void SetReentryMode(int mode)
         {
             var tx = (Transaction)Runtime.Transaction;
             ExecutionEngine.Assert(Runtime.CheckWitness(tx.Sender));
-            ExecutionEngine.Assert(mode >= 1 && mode <= 2);
+            ExecutionEngine.Assert(mode >= 1 && mode <= 3);
             SetReentryType(mode);
         }
 
         [Safe]
         public static int GetAttackStage() => GetStage();
+
+        // Adversarial entry point: call bonding's callback without GAS/token
+        // being the calling contract. The bonding contract must reject it.
+        public static void DirectCallback()
+        {
+            UInt160 bonding = GetBonding();
+            UInt160 self = Runtime.ExecutingScriptHash;
+            Contract.Call(bonding, "onNEP17Payment", CallFlags.All,
+                new object[] { self, 1, new object[] { 0 } });
+        }
 
         public static void Attack()
         {
@@ -49,6 +60,19 @@ namespace ReentrancyAttack
 
             BigInteger gasBal = (BigInteger)Contract.Call(GAS.Hash, "balanceOf", CallFlags.ReadOnly, new object[] { self });
             ExecutionEngine.Assert(gasBal >= 200000000);
+
+            int reentryType = GetReentryType();
+
+            // Mode 3 isolates buy -> token recipient callback reentrancy.
+            if (reentryType == 3)
+            {
+                SetStage(1);
+                bool buyOk = GAS.Transfer(self, bonding, 50000000,
+                    new object[] { token });
+                ExecutionEngine.Assert(buyOk);
+                SetStage(3);
+                return;
+            }
 
             // Stage 1: Buy tokens from bonding curve (0.5 GAS)
             BigInteger buyAmount = 50000000;
@@ -70,13 +94,22 @@ namespace ReentrancyAttack
 
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object[] data)
         {
-            if (GetStage() != 2) return;
+            int stage = GetStage();
+            if (stage != 2 && stage != 1) return;
 
             UInt160 caller = Runtime.CallingScriptHash;
             UInt160 bonding = GetBonding();
             UInt160 self = Runtime.ExecutingScriptHash;
             int reentryType = GetReentryType();
             if (reentryType == 0) reentryType = 1;
+
+            if (reentryType == 3)
+            {
+                if (caller != GetToken()) return;
+                Contract.Call(bonding, "onNEP17Payment", CallFlags.All,
+                    new object[] { self, amount, new object[] { 0 } });
+                return;
+            }
 
             // Only react to GAS transfers (from bonding curve's sell)
             if (caller != GAS.Hash) return;

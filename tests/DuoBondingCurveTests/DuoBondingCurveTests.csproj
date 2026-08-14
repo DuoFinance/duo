@@ -14,6 +14,8 @@
     <PackageReference Include="Neo.SmartContract.Testing" Version="3.9.1" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Exclude generated files from the removed SecurityMock project. -->
+    <Compile Remove="SecurityMock\**" />
     <EmbeddedResource Include="..\..\DuoSwapFactory\bin\sc\DuoSwapFactory.nef" Link="Contracts\DuoSwapFactory.nef" />
     <EmbeddedResource Include="..\..\DuoSwapFactory\bin\sc\DuoSwapFactory.manifest.json" Link="Contracts\DuoSwapFactory.manifest.json" />
     <EmbeddedResource Include="..\..\DuoSwapRouter\bin\sc\DuoSwapRouter.nef" Link="Contracts\DuoSwapRouter.nef" />
