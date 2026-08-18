@@ -61,6 +61,16 @@ namespace DuoBondingCurve
 
         #endregion
 
+        #region Deploy Fee
+
+        /// <summary>
+        /// Fee charged for the atomic CreateAndBuy launch flow.
+        /// Ordinary CreateSale calls do not charge this fee.
+        /// </summary>
+        public static BigInteger GetDeployFee() => ContractManagement.GetMinimumDeploymentFee() / 10;
+
+        #endregion
+
         #region Deployment
 
         public static void _deploy(object data, bool update)

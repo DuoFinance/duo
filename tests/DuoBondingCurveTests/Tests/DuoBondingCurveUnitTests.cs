@@ -4,6 +4,7 @@ using Neo;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Testing;
+using Neo.VM;
 
 
 namespace DuoBondingCurveTests;
@@ -41,6 +42,64 @@ public class DuoBondingCurveUnitTests
         var result = Invoke(_engine, _bondingCurveHash, "getRouter");
         var addr = result.GetSpan();
         Assert.Equal(_router, new UInt160(addr.ToArray()));
+    }
+
+    [Fact]
+    public void GetDeployFee_ReturnsPositiveValue()
+    {
+        var result = Invoke(_engine, _bondingCurveHash, "getDeployFee");
+        Assert.True(result.GetInteger() > 0);
+    }
+
+    [Fact]
+    public void CreateSale_DoesNotForwardDeployFee()
+    {
+        var gas = _engine.Native.GAS.Hash;
+        var factoryBalanceBefore = Invoke(_engine, gas, "balanceOf", _factory).GetInteger();
+
+        Invoke(_engine, _bondingCurveHash, "createSale",
+            "TestToken", "TST", 10_000_000_000, 8000, "", "", "", "");
+
+        var factoryBalanceAfter = Invoke(_engine, gas, "balanceOf", _factory).GetInteger();
+        Assert.Equal(factoryBalanceBefore, factoryBalanceAfter);
+    }
+
+    [Fact]
+    public void CreateAndBuy_ForwardsDeployFeeToFactory()
+    {
+        var engine = CreateEngine();
+        var (factoryNef, factoryManifest) = LoadContract("DuoSwapFactory");
+        var factory = DeployContract(engine, factoryNef, factoryManifest, Owner);
+        var (bondingNef, bondingManifest) = LoadContract("DuoBondingCurve");
+        var bondingCurve = DeployContract(engine, bondingNef, bondingManifest, new object[] { factory, _router });
+        var gas = engine.Native.GAS.Hash;
+        var deployFee = Invoke(engine, bondingCurve, "getDeployFee").GetInteger();
+        var factoryDeployFee = Invoke(engine, factory, "getDeployFee").GetInteger();
+        Assert.Equal(factoryDeployFee, deployFee);
+        var factoryBalanceBefore = Invoke(engine, gas, "balanceOf", factory).GetInteger();
+        var amount = deployFee + 1_000_000_000;
+
+        var data = new ContractParameter(ContractParameterType.Array)
+        {
+            Value = new ContractParameter[]
+            {
+                new(ContractParameterType.String) { Value = "CreateAndBuy" },
+                new(ContractParameterType.Integer) { Value = BigInteger.Zero },
+                new(ContractParameterType.String) { Value = "Test Token" },
+                new(ContractParameterType.String) { Value = "TST" },
+                new(ContractParameterType.Integer) { Value = 1_000_000_000_000 },
+                new(ContractParameterType.Integer) { Value = 8000 },
+                new(ContractParameterType.String) { Value = "" },
+                new(ContractParameterType.String) { Value = "" },
+                new(ContractParameterType.String) { Value = "" },
+                new(ContractParameterType.String) { Value = "" }
+            }
+        };
+
+        Invoke(engine, gas, "transfer", Owner, bondingCurve, amount, data);
+
+        var factoryBalanceAfter = Invoke(engine, gas, "balanceOf", factory).GetInteger();
+        Assert.Equal(deployFee, factoryBalanceAfter - factoryBalanceBefore);
     }
 
     [Fact]

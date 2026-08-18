@@ -163,6 +163,16 @@ namespace DuoBondingCurve
         {
             Assert(data.Length >= 10, "INVALID_CREATE_DATA");
 
+            BigInteger deployFee = GetDeployFee();
+            Assert(gasAmount > deployFee, "INSUFFICIENT_DEPLOY_FEE");
+
+            bool feeTransferred = GAS.Transfer(
+                Runtime.ExecutingScriptHash,
+                GetFactory(),
+                deployFee,
+                null);
+            Assert(feeTransferred, "DEPLOY_FEE_TRANSFER_FAILED");
+
             BigInteger minTokensOut = 0;
             if (data[1] != null)
                 minTokensOut = (BigInteger)data[1];
@@ -191,7 +201,7 @@ namespace DuoBondingCurve
                 projUrl,
                 buyer);
 
-            ProcessBuy(buyer, tokenHash, gasAmount, minTokensOut);
+            ProcessBuy(buyer, tokenHash, gasAmount - deployFee, minTokensOut);
         }
 
         

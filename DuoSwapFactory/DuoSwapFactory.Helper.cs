@@ -70,7 +70,7 @@ namespace DuoSwapFactory
         #endregion
 
         #region DeployFee
-        public static BigInteger GetDeployFee() => ContractManagement.GetMinimumDeploymentFee() / 100;
+        public static BigInteger GetDeployFee() => ContractManagement.GetMinimumDeploymentFee() / 10;
         #endregion
 
         #region Router
