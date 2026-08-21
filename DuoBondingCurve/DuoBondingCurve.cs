@@ -67,9 +67,6 @@ namespace DuoBondingCurve
             Assert(telegram == null || telegram.Length <= 128, "INVALID_TELEGRAM_TOO_LONG");
             Assert(projUrl == null || projUrl.Length <= 256, "INVALID_PROJURL_TOO_LONG");
 
-            var minimumDeploymentFee = ContractManagement.GetMinimumDeploymentFee();
-            Assert(targetRaise > minimumDeploymentFee * 2, "TARGET_TOO_CLOSE_TO_DEPLOY_FEE");
-
             BigInteger twoPminusOne = 2 * graduationBps - 10000;
             Assert(twoPminusOne > 0, "INVALID_GRADUATION");
 
