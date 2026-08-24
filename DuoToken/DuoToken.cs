@@ -82,9 +82,6 @@ namespace DuoToken
         public static event InitialisedEvent OnInitialised;
         public delegate void InitialisedEvent(UInt160 treasury, BigInteger totalSupply);
 
-        [DisplayName("OwnershipTransferred")]
-        public static event OwnershipTransferredEvent OnOwnershipTransferred;
-        public delegate void OwnershipTransferredEvent(UInt160 previousOwner, UInt160 newOwner);
 
         [DisplayName("Fault")]
         public static event FaultEvent OnFault;
