@@ -20,6 +20,7 @@ namespace DuoToken
         private const string INIT_KEY = "Init";
         private const string OWNER_KEY = "Owner";
         private const string TREASURY_KEY = "Treasury";
+        private static readonly BigInteger TOTAL_SUPPLY = 10000000000000; // fixed at 1 B
 
 
         public static void _deploy(object data, bool update)
@@ -31,9 +32,7 @@ namespace DuoToken
             Metadata.Put(INIT_KEY, 0);
         }
 
-        public static void Initialise(
-            UInt160 treasury,
-            BigInteger totalSupply)
+        public static void Initialise(UInt160 treasury)
         {
             Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
             Assert((BigInteger)Metadata.Get(INIT_KEY) == 0, "Initialised.");
@@ -42,8 +41,8 @@ namespace DuoToken
             Metadata.Put(INIT_KEY, 1);
             Metadata.Put(TREASURY_KEY, treasury);
 
-            Mint(treasury, totalSupply);
-            OnInitialised(treasury, totalSupply);
+            Mint(treasury, TOTAL_SUPPLY);
+            OnInitialised(treasury, TOTAL_SUPPLY);
         }
 
         [Safe]
@@ -51,18 +50,6 @@ namespace DuoToken
         {
             ByteString owner = Metadata.Get(OWNER_KEY);
             return owner?.Length == 20 ? (UInt160)owner : UInt160.Zero;
-        }
-
-        public static bool TransferOwnership(UInt160 newOwner)
-        {
-            UInt160 currentOwner = GetOwner();
-            Assert(Runtime.CheckWitness(currentOwner), "Forbidden.");
-            Assert(newOwner.IsValid && !newOwner.IsZero, "Invalid Owner.");
-            Assert(newOwner != currentOwner, "Same Owner.");
-
-            Metadata.Put(OWNER_KEY, newOwner);
-            OnOwnershipTransferred(currentOwner, newOwner);
-            return true;
         }
 
         [Safe]
@@ -76,7 +63,7 @@ namespace DuoToken
         public static bool IsInitialised() => (BigInteger)Metadata.Get(INIT_KEY) != 0;
 
         [Safe]
-        public override byte Decimals() => 8;
+        public override byte Decimals() => 4;
 
         [Safe]
         public override string Symbol() => "DUO";
@@ -93,9 +80,7 @@ namespace DuoToken
 
         [DisplayName("Initialised")]
         public static event InitialisedEvent OnInitialised;
-        public delegate void InitialisedEvent(
-            UInt160 treasury,
-            BigInteger totalSupply);
+        public delegate void InitialisedEvent(UInt160 treasury, BigInteger totalSupply);
 
         [DisplayName("OwnershipTransferred")]
         public static event OwnershipTransferredEvent OnOwnershipTransferred;

@@ -56,12 +56,6 @@ namespace DuoStaking
             Storage.Put(RESERVED_REWARDS_KEY, 0);
         }
 
-        public static void Update(ByteString nef, string manifest, object data)
-        {
-            Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
-            ContractManagement.Update(nef, manifest, data);
-        }
-
         public static void Initialise(UInt160 rewardToken)
         {
             Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
@@ -634,6 +628,12 @@ namespace DuoStaking
                 OnFault(message, null);
                 ExecutionEngine.Assert(false);
             }
+        }
+
+         public static void Update(ByteString nef, string manifest)
+        {
+            Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
+            ContractManagement.Update(nef, manifest);
         }
 
         [DisplayName("Initialised")]
