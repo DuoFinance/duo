@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Additional Restriction: Duo 3Y Algorithm Non-Copy (virtual GAS / virtual Token) — see LICENSE Section B. Expires 2029-08-31.
+// Note: generic x*y=k in GetAmountOut/GetAmountIn alone is not protected; only its combination with the virtual-reserve model is.
 using System.Numerics;
 using System.ComponentModel;
 using Neo.SmartContract.Framework;

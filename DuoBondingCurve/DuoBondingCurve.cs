@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Additional Restriction: Duo 3Y Algorithm Non-Copy (virtual GAS / virtual Token) — see LICENSE Section B. Expires 2029-08-31.
 using System.Numerics;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
