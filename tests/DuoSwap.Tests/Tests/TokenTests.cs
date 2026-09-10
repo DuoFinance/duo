@@ -32,7 +32,7 @@ public class TokenTests
     public void Decimals_ReturnsCorrectValue()
     {
         var result = Invoke(_engine, _tokenHash, "decimals");
-        Assert.Equal(8, result.GetInteger());
+        Assert.Equal(4, result.GetInteger());
     }
 
     [Fact]
@@ -71,5 +71,4 @@ public class TokenTests
         Assert.NotNull(result);
     }
 }
-
 

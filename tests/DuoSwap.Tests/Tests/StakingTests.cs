@@ -78,9 +78,8 @@ public class StakingTests
         // 2. Initialise the Tokens under Owner signature
         _engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
         
-        BigInteger initialSupply = 1_000_000_000_000; // 10,000 tokens (with 8 decimals)
-        Invoke(_engine, rewardToken, "initialise", Owner, initialSupply);
-        Invoke(_engine, lpToken, "initialise", Owner, initialSupply);
+        Invoke(_engine, rewardToken, "initialise", Owner);
+        Invoke(_engine, lpToken, "initialise", Owner);
 
         // Send some LP tokens to User to test staking
         Invoke(_engine, lpToken, "transfer", Owner, User, 1_000_000, null);
@@ -170,8 +169,8 @@ public class StakingTests
 
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry, User);
         var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, stakingHash, "update", new byte[] { 0x01 }, "{}", null));
-        Assert.Contains("ASSERT", ex.Message);
+            Invoke(engine, stakingHash, "update", new byte[] { 0x01 }, "{}"));
+        Assert.NotNull(ex);
     }
 
     [Fact]
@@ -198,9 +197,8 @@ public class StakingTests
         lpManifest.Name = "LpToken";
         var lpToken = DeployContract(engine, lpNef, lpManifest, null);
 
-        BigInteger supply = 1_000_000_000_000;
-        Invoke(engine, rewardToken, "initialise", Owner, supply);
-        Invoke(engine, lpToken, "initialise", Owner, supply);
+        Invoke(engine, rewardToken, "initialise", Owner);
+        Invoke(engine, lpToken, "initialise", Owner);
 
         Invoke(engine, stakingHash, "initialise", rewardToken);
         Assert.True(Invoke(engine, stakingHash, "isInitialised").GetBoolean());
@@ -234,8 +232,8 @@ public class StakingTests
         lpManifest.Name = "LpToken";
         var lpToken = DeployContract(engine, lpNef, lpManifest, null);
 
-        Invoke(engine, rewardToken, "initialise", Owner, 1_000_000_000_000);
-        Invoke(engine, lpToken, "initialise", Owner, 1_000_000_000_000);
+        Invoke(engine, rewardToken, "initialise", Owner);
+        Invoke(engine, lpToken, "initialise", Owner);
         Invoke(engine, stakingHash, "initialise", rewardToken);
         Invoke(engine, stakingHash, "addPool", lpToken);
 

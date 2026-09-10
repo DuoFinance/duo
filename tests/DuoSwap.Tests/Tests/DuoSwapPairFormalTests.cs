@@ -222,9 +222,8 @@ public class DuoSwapPairFormalTests
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, ts);
-        Invoke(engine, tokenB, "initialise", Owner, ts);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         return (engine, factory, router, tokenA, tokenB);
     }
@@ -244,7 +243,7 @@ public class DuoSwapPairFormalTests
             new(ContractParameterType.Hash160) { Value = tokenA },
             new(ContractParameterType.Hash160) { Value = tokenB },
         }};
-        engine.Execute(Neo.VM.Helper.MakeScript(gas, "transfer",
+        engine.Execute(gas.MakeScript("transfer",
             new ContractParameter(ContractParameterType.Hash160) { Value = Owner },
             new ContractParameter(ContractParameterType.Hash160) { Value = factory },
             new ContractParameter(ContractParameterType.Integer) { Value = fee }, d));

@@ -12,7 +12,7 @@ namespace DuoStaking
     [DisplayName("DuoStaking")]
     [ManifestExtra("Description", "Duo Multi-Pool Staking Contract")]
     [ContractSourceCode("https://github.com/DuoFinance/duoSwap.git")]
-    [ContractPermission("*")]
+    [ContractPermission("*", new[] { "*" })]
     public class DuoStakingContract : SmartContract
     {
         private static readonly byte[] PoolPrefix = new byte[] { 0x01 };
@@ -26,7 +26,7 @@ namespace DuoStaking
         private const string RESERVED_REWARDS_KEY = "ReservedRewards";
 
         private static readonly BigInteger AccPrecision = 1_000_000_000_000;
-        private static Transaction Tx => (Transaction)Runtime.ScriptContainer;
+        private static Transaction Tx => (Transaction)Runtime.Transaction;
 
         public struct PoolInfo
         {
@@ -630,7 +630,7 @@ namespace DuoStaking
             }
         }
 
-         public static void Update(ByteString nef, string manifest)
+        public static void Update(ByteString nef, string manifest)
         {
             Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
             ContractManagement.Update(nef, manifest);

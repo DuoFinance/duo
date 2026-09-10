@@ -1,11 +1,13 @@
 using System.Numerics;
 using System.Reflection;
 using Neo;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Testing;
 using Neo.VM.Types;
+using Neo.VM;
 
 namespace DuoSwap.Tests;
 
@@ -41,7 +43,7 @@ public static class TestUtils
 
         using var ms = new MemoryStream();
         nefStream.CopyTo(ms);
-        var nef = Neo.IO.Helper.AsSerializable<NefFile>(ms.ToArray());
+        var nef = ms.ToArray().AsSerializable<NefFile>();
 
         using var mr = new StreamReader(manifestStream);
         var json = mr.ReadToEnd();
@@ -66,8 +68,23 @@ public static class TestUtils
 
     public static StackItem Invoke(TestEngine engine, UInt160 contractHash, string method, params object[] args)
     {
-        var script = Neo.VM.Helper.MakeScript(contractHash, method, args);
-        var result = engine.Execute(script);
-        return result;
+        using var sb = new ScriptBuilder();
+        sb.EmitDynamicCall(contractHash, method, args);
+        return engine.Execute(sb.ToArray());
+    }
+
+    public static byte[] MakeScript(UInt160 contractHash, string method, params object[] args)
+    {
+        using var sb = new ScriptBuilder();
+        sb.EmitDynamicCall(contractHash, method, args);
+        return sb.ToArray();
+    }
+}
+
+public static class UInt160ScriptExtensions
+{
+    public static byte[] MakeScript(this UInt160 contractHash, string method, params object[] args)
+    {
+        return TestUtils.MakeScript(contractHash, method, args);
     }
 }

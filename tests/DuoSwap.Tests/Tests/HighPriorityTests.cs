@@ -34,9 +34,8 @@ public class HighPriorityTests
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, ts);
-        Invoke(engine, tokenB, "initialise", Owner, ts);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         return (engine, factory, router, tokenA, tokenB);
     }

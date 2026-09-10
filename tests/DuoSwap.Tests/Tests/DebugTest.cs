@@ -34,9 +34,8 @@ public class DebugTest
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger supply = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, supply);
-        Invoke(engine, tokenB, "initialise", Owner, supply);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         var gas = engine.Native.GAS.Hash;
         var vl = engine.ProtocolSettings.StandbyValidators;

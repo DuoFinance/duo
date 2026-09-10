@@ -335,9 +335,8 @@ public class CrossContractTests
         tokenManifestB.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tokenNef, tokenManifestB, null);
 
-        BigInteger totalSupply = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, totalSupply);
-        Invoke(engine, tokenB, "initialise", Owner, totalSupply);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         var gasHash = engine.Native.GAS.Hash;
         var validatorsList = engine.ProtocolSettings.StandbyValidators;

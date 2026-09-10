@@ -31,7 +31,7 @@ public class DebugBNeoTest
         var (tokenNef, tokenManifest) = LoadContract("DuoToken");
         tokenManifest.Name = "DuoToken";
         var token = DeployContract(engine, tokenNef, tokenManifest, null);
-        Invoke(engine, token, "initialise", Owner, 1_000_000_000_000_000_000);
+        Invoke(engine, token, "initialise", Owner);
 
         Invoke(engine, factory, "setBNeo", bneo);
 

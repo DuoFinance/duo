@@ -42,9 +42,8 @@ public class FeeToTests
         tokenManifestB.Name = "DuoTokenB";
         _tokenB = DeployContract(_engine, tokenNef, tokenManifestB, null);
 
-        BigInteger totalSupply = 1_000_000_000_000_000_000;
-        Invoke(_engine, _tokenA, "initialise", Owner, totalSupply);
-        Invoke(_engine, _tokenB, "initialise", Owner, totalSupply);
+        Invoke(_engine, _tokenA, "initialise", Owner);
+        Invoke(_engine, _tokenB, "initialise", Owner);
 
         // Fund Owner with GAS from validators for pair deployment
         var gasHash = _engine.Native.GAS.Hash;

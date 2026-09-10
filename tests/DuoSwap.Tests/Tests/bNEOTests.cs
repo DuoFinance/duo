@@ -37,7 +37,7 @@ public class bNEOTests
         var (tokenNef, tokenManifest) = LoadContract("DuoToken");
         tokenManifest.Name = "DuoToken";
         _token = DeployContract(_engine, tokenNef, tokenManifest, null);
-        Invoke(_engine, _token, "initialise", Owner, 1_000_000_000_000_000_000);
+        Invoke(_engine, _token, "initialise", Owner);
 
         _bneoPair = DeployPair(_bneo, _token);
     }
@@ -176,7 +176,7 @@ public class bNEOTests
         var (tokenNef, tokenManifest) = LoadContract("DuoToken");
         tokenManifest.Name = "DuoTokenOther";
         var otherToken = DeployContract(_engine, tokenNef, tokenManifest, null);
-        Invoke(_engine, otherToken, "initialise", Owner, 1_000_000_000_000_000_000);
+        Invoke(_engine, otherToken, "initialise", Owner);
         var normalPair = DeployPair(otherToken, _token);
 
         Invoke(_engine, _factory, "setBNeo", _bneo);

@@ -15,7 +15,7 @@ namespace DuoToken
     public class DuoTokenContract : Nep17Token
     {
         private static StorageMap Metadata => new StorageMap(Storage.CurrentContext, "Metadata");
-        private static Transaction Tx => (Transaction)Runtime.ScriptContainer;
+        private static Transaction Tx => (Transaction)Runtime.Transaction;
 
         private const string INIT_KEY = "Init";
         private const string OWNER_KEY = "Owner";
@@ -62,11 +62,17 @@ namespace DuoToken
         [Safe]
         public static bool IsInitialised() => (BigInteger)Metadata.Get(INIT_KEY) != 0;
 
-        [Safe]
-        public override byte Decimals() => 4;
+        public override byte Decimals
+        {
+            [Safe]
+            get => 4;
+        }
 
-        [Safe]
-        public override string Symbol() => "DUO";
+        public override string Symbol
+        {
+            [Safe]
+            get => "DUO";
+        }
 
 
         private static void Assert(bool condition, string message)

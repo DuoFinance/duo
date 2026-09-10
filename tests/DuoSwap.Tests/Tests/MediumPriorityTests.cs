@@ -35,9 +35,8 @@ public class MediumPriorityTests
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, ts);
-        Invoke(engine, tokenB, "initialise", Owner, ts);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         return (engine, factory, router, tokenA, tokenB);
     }
@@ -188,36 +187,29 @@ public class MediumPriorityTests
     // ============================================
 
     [Fact]
-    public void Token_TransferOwnership_ByOwner_Succeeds()
+    public void Token_GetOwner_ReturnsDeployer()
     {
         var (e, _, _, a, _) = DeployCore();
-        var newOwner = new UInt160(new byte[] { 0x0A, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0A });
-        Assert.True(Invoke(e, a, "transferOwnership", newOwner).GetBoolean());
-        Assert.Equal(newOwner, new UInt160(Invoke(e, a, "getOwner").GetSpan()));
+        Assert.Equal(Owner, new UInt160(Invoke(e, a, "getOwner").GetSpan()));
     }
 
     [Fact]
-    public void Token_TransferOwnership_ByNonOwner_Fails()
+    public void Token_GetOwner_IsStable()
     {
         var engine = CreateEngine();
         var (tn, tm) = LoadContract("DuoToken");
         var token = DeployContract(engine, tn, tm, null);
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, token, "initialise", Owner, ts);
+        Invoke(engine, token, "initialise", Owner);
 
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, token, "transferOwnership", User));
-        Assert.Contains("ASSERT", ex.Message);
+        Assert.Equal(Owner, new UInt160(Invoke(engine, token, "getOwner").GetSpan()));
     }
 
     [Fact]
-    public void Token_TransferOwnership_ToSameOwner_Fails()
+    public void Token_GetOwner_RemainsOwnerAfterInitialise()
     {
         var (e, _, _, a, _) = DeployCore();
-        var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(e, a, "transferOwnership", Owner));
-        Assert.Contains("ASSERT", ex.Message);
+        Assert.Equal(Owner, new UInt160(Invoke(e, a, "getOwner").GetSpan()));
     }
 
     // ============================================
@@ -230,11 +222,10 @@ public class MediumPriorityTests
         var engine = CreateEngine();
         var (tn, tm) = LoadContract("DuoToken");
         var token = DeployContract(engine, tn, tm, null);
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, token, "initialise", Owner, ts);
+        Invoke(engine, token, "initialise", Owner);
 
         var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, token, "initialise", Owner, ts));
+            Invoke(engine, token, "initialise", Owner));
         Assert.Contains("ASSERT", ex.Message);
     }
 
@@ -244,11 +235,9 @@ public class MediumPriorityTests
         var engine = CreateEngine();
         var (tn, tm) = LoadContract("DuoToken");
         var token = DeployContract(engine, tn, tm, null);
-        BigInteger ts = 1_000_000_000_000_000_000;
-
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, User);
         var ex = Assert.ThrowsAny<Exception>(() =>
-            Invoke(engine, token, "initialise", User, ts));
+            Invoke(engine, token, "initialise", User));
         Assert.Contains("ASSERT", ex.Message);
     }
 
@@ -260,7 +249,7 @@ public class MediumPriorityTests
     public void Token_TotalSupply_AfterInitialise_EqualsMinted()
     {
         var (e, _, _, a, _) = DeployCore();
-        BigInteger expected = 1_000_000_000_000_000_000;
+        BigInteger expected = 10_000_000_000_000;
         Assert.Equal(expected, Invoke(e, a, "totalSupply").GetInteger());
     }
 

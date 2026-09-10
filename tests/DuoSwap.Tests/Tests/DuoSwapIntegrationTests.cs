@@ -39,9 +39,8 @@ public class DuoSwapIntegrationTests
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, ts);
-        Invoke(engine, tokenB, "initialise", Owner, ts);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         return (engine, factory, router, tokenA, tokenB);
     }
@@ -100,6 +99,9 @@ public class DuoSwapIntegrationTests
         var reservesBefore = GetReserves(engine, pair);
         Assert.Equal(amountADesired, reservesBefore[0]);
         Assert.Equal(amountBDesired, reservesBefore[1]);
+        var token0 = new UInt160(Invoke(engine, pair, "getToken0").GetSpan());
+        var tokenAReserveIndex = token0 == tokenA ? 0 : 1;
+        var tokenBReserveIndex = tokenAReserveIndex == 0 ? 1 : 0;
 
         BigInteger swapAmount = 1_000_000_00;
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
@@ -118,8 +120,8 @@ public class DuoSwapIntegrationTests
             User, swapAmount, BigInteger.Zero, path, long.MaxValue);
 
         var reservesAfterSwap = GetReserves(engine, pair);
-        Assert.True(reservesAfterSwap[0] > reservesBefore[0]);
-        Assert.True(reservesAfterSwap[1] < reservesBefore[1]);
+        Assert.True(reservesAfterSwap[tokenAReserveIndex] > reservesBefore[tokenAReserveIndex]);
+        Assert.True(reservesAfterSwap[tokenBReserveIndex] < reservesBefore[tokenBReserveIndex]);
 
         engine.SetTransactionSigners(Neo.Network.P2P.Payloads.WitnessScope.Global, Owner);
         Invoke(engine, router, "removeLiquidity",

@@ -35,9 +35,8 @@ public class SwapCoverageTests
         tmb.Name = "DuoTokenB";
         var tokenB = DeployContract(engine, tn, tmb, null);
 
-        BigInteger ts = 1_000_000_000_000_000_000;
-        Invoke(engine, tokenA, "initialise", Owner, ts);
-        Invoke(engine, tokenB, "initialise", Owner, ts);
+        Invoke(engine, tokenA, "initialise", Owner);
+        Invoke(engine, tokenB, "initialise", Owner);
 
         return (engine, factory, router, tokenA, tokenB);
     }
@@ -272,8 +271,17 @@ public class SwapCoverageTests
         var pair = new UInt160(Invoke(e, f, "getPairHash", a, b).GetSpan());
         var reserve0 = Invoke(e, pair, "getReserve0").GetInteger();
         var reserve1 = Invoke(e, pair, "getReserve1").GetInteger();
-        Assert.Equal(10_000_000_00, reserve0);
-        Assert.Equal(20_000_000_00, reserve1);
+        var token0 = new UInt160(Invoke(e, pair, "getToken0").GetSpan());
+        if (token0 == a)
+        {
+            Assert.Equal(10_000_000_00, reserve0);
+            Assert.Equal(20_000_000_00, reserve1);
+        }
+        else
+        {
+            Assert.Equal(20_000_000_00, reserve0);
+            Assert.Equal(10_000_000_00, reserve1);
+        }
     }
 
     [Fact]
