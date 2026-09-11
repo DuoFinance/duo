@@ -49,21 +49,20 @@ namespace DuoStaking
         {
             if (update) return;
             Assert(Tx.Sender.IsValid && !Tx.Sender.IsZero, "Invalid Sender.");
-
-            Storage.Put(OWNER_KEY, Tx.Sender);
-            Storage.Put(INIT_KEY, 0);
-            Storage.Put(POOL_COUNT_KEY, 0);
-            Storage.Put(RESERVED_REWARDS_KEY, 0);
+            Storage.Put(Storage.CurrentContext, OWNER_KEY, Tx.Sender);
+            Storage.Put(Storage.CurrentContext, INIT_KEY, 0);
+            Storage.Put(Storage.CurrentContext, POOL_COUNT_KEY, 0);
+            Storage.Put(Storage.CurrentContext, RESERVED_REWARDS_KEY, 0);
         }
 
         public static void Initialise(UInt160 rewardToken)
         {
             Assert(Runtime.CheckWitness(GetOwner()), "Forbidden.");
-            Assert((BigInteger)Storage.Get(INIT_KEY) == 0, "Initialised.");
+            Assert((BigInteger)Storage.Get(Storage.CurrentContext, INIT_KEY) == 0, "Initialised.");
             Assert(rewardToken.IsValid && !rewardToken.IsZero, "Invalid Reward Token.");
 
-            Storage.Put(REWARD_TOKEN_KEY, rewardToken);
-            Storage.Put(INIT_KEY, 1);
+            Storage.Put(Storage.CurrentContext, REWARD_TOKEN_KEY, rewardToken);
+            Storage.Put(Storage.CurrentContext, INIT_KEY, 1);
             OnInitialised(rewardToken);
         }
 
@@ -91,12 +90,12 @@ namespace DuoStaking
         }
 
         [Safe]
-        public static bool IsInitialised() => (BigInteger)Storage.Get(INIT_KEY) != 0;
+        public static bool IsInitialised() => (BigInteger)Storage.Get(Storage.CurrentContext, INIT_KEY) != 0;
 
         [Safe]
         public static UInt160 GetOwner()
         {
-            ByteString owner = Storage.Get(OWNER_KEY);
+            ByteString owner = Storage.Get(Storage.CurrentContext, OWNER_KEY);
             return owner?.Length == 20 ? (UInt160)owner : UInt160.Zero;
         }
 
@@ -107,7 +106,7 @@ namespace DuoStaking
             Assert(newOwner.IsValid && !newOwner.IsZero, "Invalid Owner.");
             Assert(newOwner != currentOwner, "Same Owner.");
 
-            Storage.Put(OWNER_KEY, newOwner);
+            Storage.Put(Storage.CurrentContext, OWNER_KEY, newOwner);
             OnOwnershipTransferred(currentOwner, newOwner);
             return true;
         }
@@ -115,21 +114,21 @@ namespace DuoStaking
         [Safe]
         public static UInt160 GetRewardToken()
         {
-            ByteString rewardToken = Storage.Get(REWARD_TOKEN_KEY);
+            ByteString rewardToken = Storage.Get(Storage.CurrentContext, REWARD_TOKEN_KEY);
             return rewardToken?.Length == 20 ? (UInt160)rewardToken : UInt160.Zero;
         }
 
         [Safe]
         public static BigInteger GetPoolCount()
         {
-            ByteString value = Storage.Get(POOL_COUNT_KEY);
+            ByteString value = Storage.Get(Storage.CurrentContext, POOL_COUNT_KEY);
             return value is null ? 0 : (BigInteger)value;
         }
 
         [Safe]
         public static BigInteger GetReservedRewards()
         {
-            ByteString value = Storage.Get(RESERVED_REWARDS_KEY);
+            ByteString value = Storage.Get(Storage.CurrentContext, RESERVED_REWARDS_KEY);
             return value is null ? 0 : (BigInteger)value;
         }
 
@@ -138,7 +137,7 @@ namespace DuoStaking
             BigInteger current = GetReservedRewards();
             if (add) current += delta;
             else current -= delta;
-            Storage.Put(RESERVED_REWARDS_KEY, current);
+            Storage.Put(Storage.CurrentContext, RESERVED_REWARDS_KEY, current);
         }
 
         public static void AddPool(UInt160 lpToken)
@@ -163,7 +162,7 @@ namespace DuoStaking
 
             SavePoolInfo(pid, pool);
             SavePoolIdByLpToken(lpToken, pid);
-            Storage.Put(POOL_COUNT_KEY, pid + 1);
+            Storage.Put(Storage.CurrentContext, POOL_COUNT_KEY, pid + 1);
 
             OnPoolAdded(pid, lpToken);
         }
