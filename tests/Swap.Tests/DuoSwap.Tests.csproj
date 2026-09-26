@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Honeypot/**/*.cs" />
+    <Compile Remove="MockBNeo/**/*.cs" />
+    <Compile Remove="TestToken/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="Neo.Network.RPC.RpcClient" Version="3.9.1" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Neo.SmartContract.Testing" Version="3.9.1" />
+    <PackageReference Include="Neo" Version="3.9.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\SwapFactory\bin\sc\DuoSwapFactory.nef" Link="Contracts\DuoSwapFactory.nef" />
+    <EmbeddedResource Include="..\..\SwapFactory\bin\sc\DuoSwapFactory.manifest.json" Link="Contracts\DuoSwapFactory.manifest.json" />
+    <EmbeddedResource Include="..\..\SwapRouter\bin\sc\DuoSwapRouter.nef" Link="Contracts\DuoSwapRouter.nef" />
+    <EmbeddedResource Include="..\..\SwapRouter\bin\sc\DuoSwapRouter.manifest.json" Link="Contracts\DuoSwapRouter.manifest.json" />
+    <EmbeddedResource Include="..\..\SwapPair\bin\sc\DuoSwapPair.nef" Link="Contracts\DuoSwapPair.nef" />
+    <EmbeddedResource Include="..\..\SwapPair\bin\sc\DuoSwapPair.manifest.json" Link="Contracts\DuoSwapPair.manifest.json" />
+    <EmbeddedResource Include="TestToken\bin\sc\TestToken.nef" Link="Contracts\TestToken.nef" />
+    <EmbeddedResource Include="TestToken\bin\sc\TestToken.manifest.json" Link="Contracts\TestToken.manifest.json" />
+    <EmbeddedResource Include="..\..\Launchpad\bin\sc\DuoLaunchpad.nef" Link="Contracts\DuoLaunchpad.nef" />
+    <EmbeddedResource Include="..\..\Launchpad\bin\sc\DuoLaunchpad.manifest.json" Link="Contracts\DuoLaunchpad.manifest.json" />
+    <EmbeddedResource Include="Honeypot\bin\sc\DuoHoneypot.nef" Link="Contracts\DuoHoneypot.nef" />
+    <EmbeddedResource Include="Honeypot\bin\sc\DuoHoneypot.manifest.json" Link="Contracts\DuoHoneypot.manifest.json" />
+    <EmbeddedResource Include="MockBNeo\bin\sc\DuoMockBNeo.nef" Link="Contracts\DuoMockBNeo.nef" />
+    <EmbeddedResource Include="MockBNeo\bin\sc\DuoMockBNeo.manifest.json" Link="Contracts\DuoMockBNeo.manifest.json" />
+
+    
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Honeypot\DuoHoneypot.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="MockBNeo\DuoMockBNeo.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="TestToken\DuoTestToken.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>
