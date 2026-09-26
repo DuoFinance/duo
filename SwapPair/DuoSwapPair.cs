@@ -7,8 +7,8 @@ using Neo.SmartContract.Framework.Services;
 namespace DuoSwapPair
 {
     [ManifestExtra("Description", "DuoSwap Pair Contract")]
+    [ManifestExtra("Sourcecode", "http://github.com/DuoFinance/bond2swap.git")]
     [SupportedStandards("NEP-17")]
-    [ContractSourceCode("http://github.com/DuoFinance/bond2swap.git")]
     [ContractPermission("*")]
     public partial class DuoSwapPairContract : SmartContract
     {
