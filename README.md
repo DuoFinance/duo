@@ -9,7 +9,6 @@ Neo N3 smart contracts for the Duo swap and bonding-curve protocol.
 - `Launchpad/` — launchpad NEP-17 token contract.
 - `tests/` — contract tests, test-only token/contracts, and reentrancy test contracts.
 
-Contract source files retain their existing names; the project and test folders are organized separately from contract source folders.
 
 ## Build and test
 

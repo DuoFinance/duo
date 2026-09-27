@@ -58,6 +58,7 @@ namespace DuoSwapRouter
             }
         }
 
+        [Safe]
         public static UInt160 GetPairHashFromFactory(UInt160 tokenA, UInt160 tokenB)
         {
             Assert(tokenA.IsValid && tokenB.IsValid, "Invalid A or B Address.");
