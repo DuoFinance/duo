@@ -22,7 +22,6 @@ obj/
 # Rider / VS
 .vs/
 .idea/
-.vscode/
 
 # NuGet
 packages/
@@ -68,6 +67,3 @@ packages/
 
 # Logs
 *.log
-
-# VS Code
-.vscode/
