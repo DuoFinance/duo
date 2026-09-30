@@ -11,7 +11,7 @@ namespace DuoBondingCurve
 {
     [DisplayName("DuoBondingCurve")]
     [ManifestExtra("Description", "Duo Fair Launchpad")]
-    [ContractSourceCode("http://github.com/DuoFinance/bond2swap.git")]
+    [ContractSourceCode("http://github.com/DuoFinance/Duo.git")]
     [ContractPermission("*")]
     public partial class DuoBondingCurve : SmartContract
     {

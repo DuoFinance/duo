@@ -228,21 +228,19 @@ namespace DuoBondingCurve
         private static string BuildImmutableTokenManifest(string name, string discord, string x, string telegram, string projUrl)
         {
             string safeName = EscapeJsonString(name);
-            string extra = "{}";
+            string extra = "{\"Sourcecode\":\"http://github.com/DuoFinance/Duo.git\"";
             bool hasDiscord = !string.IsNullOrEmpty(discord);
             bool hasX = !string.IsNullOrEmpty(x);
             bool hasTelegram = !string.IsNullOrEmpty(telegram);
             bool hasProjUrl = !string.IsNullOrEmpty(projUrl);
             if (hasDiscord || hasX || hasTelegram || hasProjUrl)
             {
-                extra = "{";
-                bool first = true;
-                if (hasDiscord) { extra += "\"discord\":\"" + EscapeJsonString(discord) + "\""; first = false; }
-                if (hasX) { extra += (first ? "" : ",") + "\"x\":\"" + EscapeJsonString(x) + "\""; first = false; }
-                if (hasTelegram) { extra += (first ? "" : ",") + "\"telegram\":\"" + EscapeJsonString(telegram) + "\""; first = false; }
-                if (hasProjUrl) { extra += (first ? "" : ",") + "\"projUrl\":\"" + EscapeJsonString(projUrl) + "\""; }
-                extra += "}";
+                if (hasDiscord) extra += ",\"discord\":\"" + EscapeJsonString(discord) + "\"";
+                if (hasX) extra += ",\"x\":\"" + EscapeJsonString(x) + "\"";
+                if (hasTelegram) extra += ",\"telegram\":\"" + EscapeJsonString(telegram) + "\"";
+                if (hasProjUrl) extra += ",\"projUrl\":\"" + EscapeJsonString(projUrl) + "\"";
             }
+            extra += "}";
             return "{\"name\":\"" + safeName + "\",\"groups\":[],\"features\":{},\"supportedstandards\":[\"NEP-17\"],\"abi\":{\"methods\":[{\"name\":\"symbol\",\"parameters\":[],\"returntype\":\"String\",\"offset\":0,\"safe\":true},{\"name\":\"decimals\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":60,\"safe\":true},{\"name\":\"totalSupply\",\"parameters\":[],\"returntype\":\"Integer\",\"offset\":113,\"safe\":true},{\"name\":\"balanceOf\",\"parameters\":[{\"name\":\"owner\",\"type\":\"Hash160\"}],\"returntype\":\"Integer\",\"offset\":151,\"safe\":true},{\"name\":\"transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"},{\"name\":\"data\",\"type\":\"Any\"}],\"returntype\":\"Boolean\",\"offset\":396,\"safe\":false},{\"name\":\"_deploy\",\"parameters\":[{\"name\":\"data\",\"type\":\"Any\"},{\"name\":\"update\",\"type\":\"Boolean\"}],\"returntype\":\"Void\",\"offset\":823,\"safe\":false},{\"name\":\"_initialize\",\"parameters\":[],\"returntype\":\"Void\",\"offset\":1187,\"safe\":false}],\"events\":[{\"name\":\"Transfer\",\"parameters\":[{\"name\":\"from\",\"type\":\"Hash160\"},{\"name\":\"to\",\"type\":\"Hash160\"},{\"name\":\"amount\",\"type\":\"Integer\"}]},{\"name\":\"Fault\",\"parameters\":[{\"name\":\"message\",\"type\":\"String\"},{\"name\":\"args\",\"type\":\"Array\"}]}]},\"permissions\":[{\"contract\":\"*\",\"methods\":[\"onNEP17Payment\"]}],\"trusts\":[],\"extra\":" + extra + "}";
         }
 

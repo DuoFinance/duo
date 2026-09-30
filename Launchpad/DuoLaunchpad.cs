@@ -9,7 +9,7 @@ namespace DuoLaunchpad
 {
     [ManifestExtra("Description", "Duo Bonding Curve Launchpad Series")]
     [SupportedStandards("NEP-17")]
-    [ContractSourceCode("http://github.com/DuoFinance/bond2swap.git")]
+    [ContractSourceCode("http://github.com/DuoFinance/Duo.git")]
     [ContractPermission("*")]
 
     public class DuoLaunchpad : Nep17Token

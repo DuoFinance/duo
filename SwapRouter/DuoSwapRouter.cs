@@ -10,7 +10,7 @@ namespace DuoSwapRouter
 {
     [DisplayName("DuoSwapRouter")]
     [ManifestExtra("Description", "DuoSwap Router Contract")]
-    [ManifestExtra("Sourcecode", "http://github.com/DuoFinance/bond2swap.git")]
+    [ManifestExtra("Sourcecode", "http://github.com/DuoFinance/Duo.git")]
     [ContractPermission("*")]
     public partial class DuoSwapRouterContract : SmartContract
     {
