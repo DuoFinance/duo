@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-// Additional Restriction: Duo 3Y Algorithm Non-Copy (virtual GAS / virtual Token) — see LICENSE Section B. Expires 2029-08-31.
+// The virtual-reserve bonding-curve algorithm in this file is subject to the
+// temporary commercial restriction in LICENSE Section B; other code is not.
 using System.Numerics;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;

@@ -22,4 +22,4 @@ Neo contract projects use the `neo.compiler.csharp` local tool declared in their
 
 ## License
 
-See [LICENSE](LICENSE) for the MIT terms and the additional three-year restriction that applies specifically to the virtual-reserve bonding-curve algorithm.
+See [LICENSE](LICENSE) for the licensing terms. The virtual-reserve bonding-curve algorithm is subject to a temporary commercial-use restriction from 2026-10-31 through 2029-10-30, then becomes MIT-licensed. Other repository contents are MIT-licensed. Earlier releases remain subject to their accompanying license terms.
