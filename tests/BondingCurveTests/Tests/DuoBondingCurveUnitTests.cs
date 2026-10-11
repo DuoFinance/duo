@@ -295,6 +295,38 @@ public class DuoBondingCurveUnitTests
         Assert.NotNull(exception);
     }
 
+    [Theory]
+    [InlineData("TO.KEN")]   // dot rejected by factory DeployPair
+    [InlineData("AB CD")]    // space
+    [InlineData("A$B")]      // symbol char
+    [InlineData("TOK/")]     // slash
+    [InlineData("T\u00D6K")] // non-ASCII (UTF-8 multi-byte)
+    public void CreateSale_SymbolWithInvalidCharset_Faults(string symbol)
+    {
+        string name = "TestToken";
+        BigInteger targetRaise = 10_000_000_000;
+        BigInteger graduationBps = 6500;
+
+        var exception = Record.Exception(() =>
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
+        Assert.NotNull(exception);
+    }
+
+    [Theory]
+    [InlineData("AB-c_d")]
+    [InlineData("AZaz09-_")]
+    [InlineData("My-Token")]
+    public void CreateSale_SymbolWithValidCharset_Works(string symbol)
+    {
+        string name = "TestToken";
+        BigInteger targetRaise = 10_000_000_000;
+        BigInteger graduationBps = 6500;
+
+        var exception = Record.Exception(() =>
+            Invoke(_engine, _bondingCurveHash, "createSale", name, symbol, targetRaise, graduationBps, "", "", "", ""));
+        Assert.Null(exception);
+    }
+
     [Fact]
     public void CreateSale_GraduationBps4999_Faults()
     {

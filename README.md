@@ -4,7 +4,7 @@ Neo N3 smart contracts for the Duo swap and bonding-curve protocol.
 
 ## Projects
 
-- `BondingCurve/` — virtual-reserve bonding-curve contract.
+- `BondingCurve/` — virtual-reserve bonding-curve contract. Sale token symbols must match `[A-Za-z0-9_-]` (max 8 chars), validated at sale creation to align with the SwapFactory pair-deployment requirements.
 - `SwapFactory/`, `SwapPair/`, `SwapRouter/` — swap factory, pair, and router contracts.
 - `Launchpad/` — launchpad NEP-17 token contract.
 - `tests/` — contract tests, test-only token/contracts, and reentrancy test contracts.
