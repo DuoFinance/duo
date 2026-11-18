@@ -279,6 +279,7 @@ namespace DuoBondingCurve
                 }
             }
 
+            Assert(tokens > 0, "ZERO_TOKENS");
             Assert(tokens >= minTokensOut, "SLIPPAGE_EXCEEDED");
 
             sale.TokensSold += tokens;
@@ -291,10 +292,16 @@ namespace DuoBondingCurve
                 new object[] { Runtime.ExecutingScriptHash, buyer, tokens, null });
             Assert(ok, "TRANSFER_FAILED");
 
+            // Fee failure is non-blocking (same policy as refund): do not revert the trade.
             if (feeOn && fee > 0)
             {
-                bool feeOk = GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
-                Assert(feeOk, "FEE_TRANSFER_FAILED");
+                try
+                {
+                    GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
+                }
+                catch
+                {
+                }
             }
 
             // Graduation is defined by the configured token allocation cap.
@@ -358,10 +365,16 @@ namespace DuoBondingCurve
             sale.TokensSold -= tokenAmount;
             sale.GASRaised -= gasReturn;
 
+            // Fee failure is non-blocking: seller payout must still succeed.
             if (feeOn && fee > 0)
             {
-                bool feeOk = GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
-                Assert(feeOk, "FEE_TRANSFER_FAILED");
+                try
+                {
+                    GAS.Transfer(Runtime.ExecutingScriptHash, feeTo, fee, null);
+                }
+                catch
+                {
+                }
             }
 
             bool ok = GAS.Transfer(Runtime.ExecutingScriptHash, seller, userGas, null);
