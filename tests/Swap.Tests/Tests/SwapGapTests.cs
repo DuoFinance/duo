@@ -126,6 +126,38 @@ public class SwapGapTests
     // ============================================
 
     [Fact]
+    public void Pair_Twap_FirstSwap_AccumulatesFromFirstLiquidityTimestamp()
+    {
+        var (e, f, r, a, b) = DeployCore();
+        var p = DeployPair(e, f, a, b);
+        AddLiquidity(e, r, a, b);
+
+        var cumulativeAfterMint = Assert.IsAssignableFrom<Neo.VM.Types.Array>(
+            Invoke(e, p, "getPriceCumulative"));
+        var timestampAfterMint = cumulativeAfterMint[2].GetInteger();
+        Assert.True(timestampAfterMint > 0);
+
+        var reserve0Before = Invoke(e, p, "getReserve0").GetInteger();
+        var reserve1Before = Invoke(e, p, "getReserve1").GetInteger();
+        e.PersistingBlock.Skip(5, TimeSpan.FromSeconds(15));
+        e.PersistingBlock.Persist(
+            System.Array.Empty<Neo.Network.P2P.Payloads.Transaction>(),
+            System.Array.Empty<Neo.VM.VMState>());
+
+        Invoke(e, r, "swapExactTokensForTokens", Owner, 1_000_000_00, BigInteger.Zero,
+            MakePath(a, b), long.MaxValue);
+
+        var cumulativeAfterSwap = Assert.IsAssignableFrom<Neo.VM.Types.Array>(
+            Invoke(e, p, "getPriceCumulative"));
+        var elapsed = cumulativeAfterSwap[2].GetInteger() - timestampAfterMint;
+        var expectedPrice0 = reserve1Before * 100_000_000_000_000_000 * elapsed / reserve0Before;
+
+        Assert.True(elapsed > 0);
+        Assert.Equal(expectedPrice0, cumulativeAfterSwap[0].GetInteger());
+    }
+
+
+    [Fact]
     public void Pair_Twap_PriceCumulative_IncrementsAfterTimePasses()
     {
         var (e, f, r, a, b) = DeployCore();

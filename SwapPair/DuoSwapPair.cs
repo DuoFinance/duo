@@ -214,9 +214,11 @@ namespace DuoSwapPair
             {
                 prices.Price0CumulativeLast += previous.Reserve1 * Q112 * elapsed / previous.Reserve0;
                 prices.Price1CumulativeLast += previous.Reserve0 * Q112 * elapsed / previous.Reserve1;
-                prices.BlockTimestampLast = timestamp;
-                Cumulative = prices;
+             
             }
+
+            prices.BlockTimestampLast = timestamp;
+            Cumulative = prices;
 
             ReservePair = new ReservesData() { Reserve0 = balance0, Reserve1 = balance1 };
             Synced(balance0, balance1);
