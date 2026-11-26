@@ -38,6 +38,7 @@
     
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SwapPair\DuoSwapPair.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="Honeypot\DuoHoneypot.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="MockBNeo\DuoMockBNeo.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="TestToken\DuoTestToken.csproj" ReferenceOutputAssembly="false" />
