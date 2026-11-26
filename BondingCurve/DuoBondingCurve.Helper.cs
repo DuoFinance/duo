@@ -1,6 +1,4 @@
-// The virtual-reserve bonding-curve algorithm in this file is subject to the
-// temporary commercial restriction in LICENSE Section B; other code is not.
-// Note: generic x*y=k in GetAmountOut/GetAmountIn alone is not protected; only its combination with the virtual-reserve model is.
+// SPDX-License-Identifier: BUSL-1.1
 using System.Numerics;
 using System.ComponentModel;
 using Neo.SmartContract.Framework;

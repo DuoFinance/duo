@@ -1,5 +1,4 @@
-// The virtual-reserve bonding-curve algorithm in this file is subject to the
-// temporary commercial restriction in LICENSE Section B; other code is not.
+// SPDX-License-Identifier: BUSL-1.1
 using System.Numerics;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;

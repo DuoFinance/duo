@@ -22,4 +22,12 @@ Neo contract projects use the `neo.compiler.csharp` local tool declared in their
 
 ## License
 
-See [LICENSE](LICENSE) for the licensing terms. The virtual-reserve bonding-curve algorithm is subject to a temporary commercial-use restriction from 2026-10-31 through 2029-10-30, then becomes MIT-licensed. Other repository contents are MIT-licensed. Earlier releases remain subject to their accompanying license terms.
+The N3 bonding-curve source files `BondingCurve/DuoBondingCurve.cs` and
+`BondingCurve/DuoBondingCurve.Helper.cs` are licensed under the unmodified
+Business Source License 1.1 (`BUSL-1.1`), with the Additional Use Grant in
+[`ADDITIONAL_USE_GRANT.md`](ADDITIONAL_USE_GRANT.md). The Change Date is
+2029-10-31 UTC, when the Licensed Work becomes available under MIT. The
+remaining original repository code is licensed under [`MIT_LICENSE`](MIT_LICENSE).
+Earlier releases remain subject to the license terms distributed with those
+releases. The BUSL-1.1 license is not an Open Source license during its
+restriction period.

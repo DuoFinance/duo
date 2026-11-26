@@ -1,152 +1,98 @@
-Duo Bonding Curve Temporary Commercial Restriction
-Copyright (c) 2026 Duo Finance
+Business Source License 1.1
 
-IMPORTANT: During the Restriction Period in Section B, this is not an
-OSI-approved Open Source license for the Protected Algorithm.
+License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
+"Business Source License" is a trademark of MariaDB Corporation Ab.
 
-================================================================
-Section A — MIT License Outside the Restriction Period
-================================================================
+-----------------------------------------------------------------------------
 
-Except during the Restriction Period defined in Section B, the following
-MIT License applies to the software and documentation in this repository,
-including the Protected Algorithm:
+Parameters
 
-MIT License
+Licensor:             Duo Finance
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensed Work:        Duo N3 Bonding Curve Core, consisting of
+                      BondingCurve/DuoBondingCurve.cs and
+                      BondingCurve/DuoBondingCurve.Helper.cs
+                      The Licensed Work is (c) 2026 Duo Finance
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Additional Use Grant: Any uses listed and defined in
+                      ADDITIONAL_USE_GRANT.md
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Change Date:          2029-10-31 00:00 UTC
 
-================================================================
-Section B — Temporary Commercial Restriction on the Virtual-Reserve
-Bonding-Curve Algorithm
-================================================================
+Change License:       MIT License
 
-1. Protected Algorithm
+-----------------------------------------------------------------------------
 
-   "Protected Algorithm" means the virtual-reserve bonding-curve mechanism
-   implemented in the BondingCurve project, including the combination of:
+Terms
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The
+Licensor may make an Additional Use Grant, above, permitting limited
+production use.
 
-   (a) virtual GAS and virtual Token reserves parameterized by a graduation
-       threshold p, target raise R, and token supply T, including formulas
-       equivalent to:
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the paragraph
+above terminate.
 
-         vToken = T * p^2 / (10000 * (2p - 10000))
-         vGAS   = R * (10000 - p) / (2p - 10000)
+If your use of the Licensed Work does not comply with the requirements
+currently in effect as described in this License, you must purchase a
+commercial license from the Licensor, its affiliated entities, or authorized
+resellers, or you must refrain from using the Licensed Work.
 
-   (b) buy and sell pricing based on effective reserves equivalent to:
+All copies of the original and modified Licensed Work, and derivative works
+of the Licensed Work, are subject to this License. This License applies
+separately for each version of the Licensed Work and the Change Date may vary
+for each version of the Licensed Work released by Licensor.
 
-         gasReserve   = vGAS + GASRaised
-         tokenReserve = vToken - TokensSold
+You must conspicuously display this License on each original or modified copy
+of the Licensed Work. If you receive the Licensed Work in original or
+modified form from a third party, the terms and conditions set forth in this
+License apply to your use of that work.
 
-   (c) the use of those reserves and graduation parameters together to price
-       trades and graduate liquidity to a constant-product pool.
+Any use of the Licensed Work in violation of this License will automatically
+terminate your rights under this License for the current and all other
+versions of the Licensed Work.
 
-   The Protected Algorithm is asset- and chain-agnostic. Replacing GAS with
-   another blockchain's native token, a wrapped token, or another asset does
-   not by itself place an otherwise derivative implementation outside this
-   definition. The same applies to changing variable or parameter names,
-   constants, programming languages, or deployment chains, where the
-   implementation retains the substance of the mechanism described above.
+This License does not grant you any right in any trademark or logo of
+Licensor or its affiliates (provided that you may use a trademark or logo of
+Licensor as expressly required by this License).
 
-   The generic constant-product formula x*y=k, by itself, is not the
-   Protected Algorithm. The restriction applies only to the combination
-   described above and implementations derived from the Protected Algorithm.
-   It does not claim exclusive rights in mathematical ideas or methods as
-   such, or in implementations independently created without copying
-   protectable expression from this Software. A change in asset, chain,
-   naming, or language alone does not establish independent creation.
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED ON
+AN "AS IS" BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS,
+EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
+TITLE.
 
-2. Restriction Period
+MariaDB hereby grants you permission to use this License’s text to license
+your works, and to refer to it using the trademark "Business Source License",
+as long as you comply with the Covenants of Licensor below.
 
-   Effective Date: 2026-10-31 00:00 UTC
-   Change Date:    2029-10-31 00:00 UTC
+-----------------------------------------------------------------------------
 
-   Before the Effective Date, Section A applies to the Protected Algorithm.
-   The "Restriction Period" begins on the Effective Date and ends
-   immediately before the Change Date. The Change Date applies to this
-   release and all versions of the Protected Algorithm distributed under
-   this License. Earlier releases remain subject to the license terms
-   distributed with those releases.
+Covenants of Licensor
+In consideration of the right to use this License’s text and the "Business
+Source License" name and trademark, Licensor covenants to MariaDB, and to all
+other recipients of the licensed work to be provided by Licensor:
 
-3. Permission During the Restriction Period
+1. To specify as the Change License the GPL Version 2.0 or any later version,
+   or a license that is compatible with GPL Version 2.0 or a later version,
+   where "compatible" means that software provided under the Change License
+   can be included in a program with software provided under GPL Version 2.0
+   or a later version. Licensor may specify additional Change Licenses
+   without limitation.
 
-   Subject to this Section B, you may use, copy, study, modify, create
-   derivative works of, and distribute the Protected Algorithm and
-   implementations derived from it for non-commercial purposes. This
-   includes non-commercial testing, research, education, and deployment.
-   You must retain this License and applicable copyright notices in copies
-   or substantial portions of the Protected Algorithm.
+2. To either: (a) specify an additional grant of rights to use that does not
+   impose any additional restriction on the right granted in this License, as
+   the Additional Use Grant; or (b) insert the text "None".
 
-   "Commercial purpose" means an activity primarily intended for or
-   directed toward commercial advantage or monetary compensation. During
-   the Restriction Period, you may not, without prior written permission
-   from the copyright holder:
+3. To specify a Change Date.
 
-   (a) deploy or operate the Protected Algorithm, or an implementation
-       derived from it, in a commercial product, protocol, or service; or
+4. Not to modify this License in any other way.
 
-   (b) create, commission, distribute, offer, sell, license, or otherwise
-       provide a derivative implementation for a commercial purpose.
+-----------------------------------------------------------------------------
 
-   Commercial integration with or use of the canonical Duo contracts as a
-   user or frontend/router integrator is not, by itself, deployment of a
-   separate implementation of the Protected Algorithm.
-
-4. Change License
-
-   Effective on the Change Date, the Protected Algorithm and all versions
-   of it distributed under this License are additionally and automatically
-   licensed under the MIT License in Section A. No further notice or action
-   is required. After the Change Date, the restrictions in Section B no
-   longer apply to the Protected Algorithm.
-
-5. Other Terms
-
-   Section A continues to apply to all software and documentation outside
-   the Protected Algorithm. Except for the express temporary restrictions
-   in this Section B, this License does not limit rights granted under
-   Section A.
-
-   THE PROTECTED ALGORITHM IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
-   KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-   CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
-   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
-
-   This License does not grant rights to trademarks, logos, or other
-   branding. Any permission under this License must be in writing from a
-   party authorized to grant it.
-
-6. Pseudonymous Copyright Holder and Notices
-
-   "Duo Finance" is the pseudonym used by the person acting as copyright
-   holder for this Software. This License does not require that person's
-   legal name to be published as a condition of communicating under that
-   pseudonym.
-
-   Requests for permission under Section B and other license notices may
-   be directed to the copyright holder through a GitHub issue or pull
-   request in this repository, or through contact information published
-   in this repository or the canonical Duo deployments. A response is
-   effective only if made by a person authorized to act for the copyright
-   holder.
-
-   This section describes the name and contact channels used by the
-   copyright holder. It does not determine legal ownership, authority,
-   standing, or evidentiary effect, which depend on applicable law and
-   facts.
+Notice
+The Business Source License (this document, or the "License") is not an Open
+Source license. However, the Licensed Work will eventually be made available
+under an Open Source License, as stated in this License.
